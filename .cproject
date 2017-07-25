@@ -60,7 +60,7 @@
 								<option id="com.crt.advproject.link.gcc.multicore.master.userobjs.614834410" name="Slave Objects (not visible)" superClass="com.crt.advproject.link.gcc.multicore.master.userobjs" valueType="userObjs"/>
 								<option id="com.crt.advproject.link.arch.337222052" name="Architecture" superClass="com.crt.advproject.link.arch" value="com.crt.advproject.link.target.cm3" valueType="enumerated"/>
 								<option id="com.crt.advproject.link.thumb.160596897" name="Thumb mode" superClass="com.crt.advproject.link.thumb" value="true" valueType="boolean"/>
-								<option id="com.crt.advproject.link.script.1818172975" name="Linker script" superClass="com.crt.advproject.link.script" value="&quot;SPOFS_1_Debug.ld&quot;" valueType="string"/>
+								<option id="com.crt.advproject.link.script.1818172975" name="Linker script" superClass="com.crt.advproject.link.script" value="&quot;diu_Debug.ld&quot;" valueType="string"/>
 								<option id="com.crt.advproject.link.manage.119286289" name="Manage linker script" superClass="com.crt.advproject.link.manage" value="true" valueType="boolean"/>
 								<option id="gnu.c.link.option.nostdlibs.1250695641" name="No startup or default libs (-nostdlib)" superClass="gnu.c.link.option.nostdlibs" value="true" valueType="boolean"/>
 								<option id="gnu.c.link.option.other.453106742" name="Other options (-Xlinker [option])" superClass="gnu.c.link.option.other" valueType="stringList">
