@@ -31,6 +31,15 @@
 // TODO: MAJOR - naming consistency
 // TODO: MAJOR - change I2C to handle multiple words in one write
 
+SHUNT shunt =
+{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+BMU bmu =
+{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+CLOCK clock =
+{ 0, 0, 0, 0, 0, 0 };
+
 /////////////////////////////   CAN    ////////////////////////////////
 CAN_MSG can_tx1_buf, can_tx2_buf; /* TX Buffers for CAN messages */
 CAN_MSG can_rx1_buf, can_rx2_buf; /* RX Buffers for CAN messages */
@@ -90,13 +99,13 @@ void SysTick_Handler (void)
     can_tx1_buf.DataA = conv_float_uint(drive.speed_rpm);
     if(drive.current < 0){can_tx1_buf.DataB = conv_float_uint(drive.current * -1.0);}
     else{can_tx1_buf.DataB = conv_float_uint(drive.current);}
-    CAN1_SendMessage( &can_tx1_buf );
+    can1_send_message( &can_tx1_buf );
 
     can_tx1_buf.Frame = 0x00080000;
     can_tx1_buf.MsgID = ESC_CONTROL + 2;
     can_tx1_buf.DataA = 0x0;
     can_tx1_buf.DataB = conv_float_uint(1);
-    CAN1_SendMessage( &can_tx1_buf );
+    can1_send_message( &can_tx1_buf );
 
     esc.avg_power += esc.watts;
     mppt1.avg_power += mppt1.watts;
@@ -109,7 +118,7 @@ void SysTick_Handler (void)
 	  if(!clock.blink)
 	  {
 		  can_tx2_buf.MsgID = MPPT1_BASE;
-		  CAN2_SendMessage( &can_tx2_buf );
+		  can2_send_message( &can_tx2_buf );
 	  }
 	  clock.blink = 1;
   }
@@ -118,7 +127,7 @@ void SysTick_Handler (void)
 	  if(clock.blink)
 	  {
 		  can_tx2_buf.MsgID = MPPT2_BASE;
-		  CAN2_SendMessage( &can_tx2_buf );
+		  can2_send_message( &can_tx2_buf );
 	  }
 	  clock.blink = 0;
   }
@@ -160,14 +169,14 @@ void SysTick_Handler (void)
     if(stats.avg_power_counter){can_tx1_buf.DataA = conv_float_uint(esc.avg_power/stats.avg_power_counter);}
     else{can_tx1_buf.DataA = 0;}
     can_tx1_buf.DataB = conv_float_uint((mppt1.watt_hrs + mppt2.watt_hrs));
-    CAN1_SendMessage( &can_tx1_buf );
+    can1_send_message( &can_tx1_buf );
 
     if(stats.avg_power_counter){
     can_tx1_buf.Frame = 0x00080000;
     can_tx1_buf.MsgID = DASH_RPLY + 4;
     can_tx1_buf.DataA = conv_float_uint(mppt1.avg_power/stats.avg_power_counter);
     can_tx1_buf.DataB = conv_float_uint(mppt2.avg_power/stats.avg_power_counter);
-    CAN1_SendMessage( &can_tx1_buf );}
+    can1_send_message( &can_tx1_buf );}
 
     persistent_store(); // Store data in eeprom every second
 
@@ -298,6 +307,31 @@ void main_mppt_poll (void)
   }
 }
 
+/******************************************************************************
+ ** Function:    can1_unpack
+ **
+ ** Description: Unpacks data received on CAN1
+ **
+ ** Parameters:  Received CAN message
+ ** Return:      None
+ **
+ ******************************************************************************/
+void can1_unpack(CAN_MSG *_msg)
+{
+	if (_msg->MsgID >= ESC_BASE && _msg->MsgID <= ESC_BASE + 23)
+	{
+		esc_data_extract(&esc, _msg);
+	}
+	else if (_msg->MsgID >= DASH_RQST && _msg->MsgID <= DASH_RQST + 1)
+	{
+		dash_data_extract(_msg);
+	}
+	else if (_msg->MsgID >= BMU_SHUNT && _msg->MsgID <= BMU_SHUNT + 2)
+	{
+		shunt_data_extract(&shunt, _msg);
+	}
+}
+
 void extractMPPT1DATA(void)
 {
 	uint32_t RawDATA_A = can_rx2_buf.DataA;
@@ -307,7 +341,7 @@ void extractMPPT1DATA(void)
 	can_tx1_buf.Frame = 0x00070000;
 	can_tx1_buf.DataA = RawDATA_A;
 	can_tx1_buf.DataB = RawDATA_B;
-	CAN1_SendMessage( &can_tx1_buf );
+	can1_send_message( &can_tx1_buf );
 
 	uint32_t tempVOLT_IN = 0;
 	uint32_t tempCURR_IN = 0;
@@ -350,7 +384,7 @@ void extractMPPT2DATA(void)
 	can_tx1_buf.Frame = 0x00070000;
 	can_tx1_buf.DataA = RawDATA_A;
 	can_tx1_buf.DataB = RawDATA_B;
-	CAN1_SendMessage( &can_tx1_buf );
+	can1_send_message( &can_tx1_buf );
 
 	uint32_t tempVOLT_IN = 0;
 	uint32_t tempCURR_IN = 0;
@@ -405,7 +439,7 @@ void mppt_data_extract (MPPT *_MPPT)
   can_tx1_buf.MsgID = can_rx2_buf.MsgID;
   can_tx1_buf.DataA = _Data_A;
   can_tx1_buf.DataB = _Data_B;
-  CAN1_SendMessage( &can_tx1_buf );
+  can1_send_message( &can_tx1_buf );
 
   // Status Flags
   _MPPT->flags &= 0xC3;
@@ -431,6 +465,148 @@ void mppt_data_extract (MPPT *_MPPT)
   _MPPT->i_in = iir_filter_uint(_IIn, _MPPT->i_in, IIR_GAIN_ELECTRICAL);
   _MPPT->v_out = iir_filter_uint(_VOut, _MPPT->v_out, IIR_GAIN_ELECTRICAL);
   _MPPT->flags |= 0x03; // Connection timing bits
+}
+
+/******************************************************************************
+ ** Function:    esc_data_extract
+ **
+ ** Description: Extracts data from CAN messages into MOTORCONTROLLER structure.
+ **
+ ** Parameters:  1. Address of MOTORCONTROLLER to extract to
+ ** 			 2. CAN message to extract from
+ ** Return:      None
+ **
+ ******************************************************************************/
+void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
+{
+	switch (_msg->MsgID)
+	{
+	case ESC_BASE + 1:
+		_esc->error = (_msg->DataA >> 16);
+		if (_esc->error == 0x2)
+		{
+			can_rx1_done = TRUE;
+			NEUTRAL_ON
+			;
+			REVERSE_ON
+			;
+			DRIVE_ON
+			;
+			REGEN_ON
+			;
+		}
+		break;
+	case ESC_BASE + 2:
+		_esc->bus_v = iir_filter_float(_esc->bus_v,
+				conv_uint_float(_msg->DataA), IIR_GAIN_ELECTRICAL);
+		_esc->bus_i = iir_filter_float(_esc->bus_i,
+				conv_uint_float(_msg->DataB), IIR_GAIN_ELECTRICAL);
+		break;
+	case ESC_BASE + 3:
+		_esc->velocity_kmh = conv_uint_float(_msg->DataB) * 3.6;
+		break;
+	case ESC_BASE + 11:
+		_esc->heatsink_tmp = conv_uint_float(_msg->DataB);
+		_esc->motor_tmp = conv_uint_float(_msg->DataA);
+		break;
+	case ESC_BASE + 12:
+		_esc->board_tmp = conv_uint_float(_msg->DataA);
+		break;
+	case ESC_BASE + 14:
+		_esc->odometer = conv_uint_float(_msg->DataA);
+		break;
+	}
+}
+
+/******************************************************************************
+ ** Function:    dash_data_extract
+ **
+ ** Description: Extracts data from CAN messages for dash communication.
+ **
+ ** Parameters:  1. CAN message to extract from
+ ** Return:      None
+ **
+ ******************************************************************************/
+void dash_data_extract(CAN_MSG *_msg)
+{
+	switch (_msg->MsgID)
+	{
+	case DASH_RQST:
+		can_rx1_done = TRUE;
+		break;
+	case DASH_RQST + 1:
+		SET_STATS_COMMS
+		;
+		break;
+	}
+}
+
+/******************************************************************************
+ ** Function:    shunt_data_extract
+ **
+ ** Description: Extracts data from CAN messages into SHUNT structure.
+ **
+ ** Parameters:  1. Address of SHUNT to extract to
+ ** 			 2. CAN message to extract from
+ ** Return:      None
+ **
+ ******************************************************************************/
+void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
+{
+	switch (_msg->MsgID)
+	{
+	case BMU_SHUNT:
+		shunt.bus_v = conv_uint_float(_msg->DataA); // Values filtered on shunt side
+		shunt.bus_i = conv_uint_float(_msg->DataB);
+		shunt.watts = shunt.bus_i * shunt.bus_v;
+		shunt.con_tim = 3;
+		break;
+	case BMU_SHUNT + 1:
+		shunt.watt_hrs_out = conv_uint_float(_msg->DataA);
+		shunt.watt_hrs_in = conv_uint_float(_msg->DataB);
+		break;
+	case BMU_SHUNT + 2:
+		shunt.watt_hrs = conv_uint_float(_msg->DataA);
+		break;
+	}
+}
+
+/******************************************************************************
+ ** Function:    bmu_data_extract
+ **
+ ** Description: Extracts data from CAN messages into BMU structure.
+ **
+ ** Parameters:  1. Address of BMU to extract to
+ ** 			 2. CAN message to extract from
+ ** Return:      None
+ **
+ ******************************************************************************/
+void bmu_data_extract(BMU *_bmu, CAN_MSG *_msg)
+{
+	switch (_msg->MsgID)
+	{
+	case BMU_BASE + BMU_INFO + 4:
+		bmu.min_cell_v = _msg->DataA & 0xFFFF;
+		bmu.max_cell_v = (_msg->DataA >> 16) & 0xFFFF;
+		bmu.cmu_min_v = _msg->DataB & 0xFF;
+		bmu.cmu_max_v = (_msg->DataB >> 16) & 0xFF;
+		bmu.cell_min_v = (_msg->DataB >> 8) & 0xFF;
+		bmu.cell_max_v = (_msg->DataB >> 24) & 0xFF;
+		break;
+	case BMU_BASE + BMU_INFO + 5:
+		bmu.max_cell_tmp = _msg->DataA & 0xFFFF;
+		bmu.max_cell_tmp = (_msg->DataA >> 16) & 0xFFFF;
+		bmu.cmu_min_tmp = _msg->DataB & 0xFF;
+		bmu.cmu_max_tmp = (_msg->DataB >> 16) & 0xFF;
+		break;
+	case BMU_BASE + BMU_INFO + 6:
+		bmu.bus_v = iir_filter_uint(_msg->DataA / 1000, bmu.bus_v, IIR_GAIN_ELECTRICAL); // Packet is in mV and mA
+		bmu.bus_i = iir_filter_int(_msg->DataB / 1000, bmu.bus_i, IIR_GAIN_ELECTRICAL);
+		break;
+	case BMU_BASE + BMU_INFO + 9:
+		bmu.status = _msg->DataA & 0x7; // Only Voltage and Temperature flags relevant
+		break;
+	}
 }
 
 /******************************************************************************
@@ -475,7 +651,7 @@ void main_input_check (void)
         can_tx1_buf.MsgID = DASH_RPLY + 1;
         can_tx1_buf.DataA = 0x0;
         can_tx1_buf.DataB = 0x0;
-        CAN1_SendMessage( &can_tx1_buf );
+        can1_send_message( &can_tx1_buf );
       }
       CLR_STATS_COMMS;
     }
@@ -509,7 +685,7 @@ int main_fault_check (void)
   if(mppt1.i_in == 0 || mppt2.i_in == 0){SET_STATS_NO_ARR_HV;}
   else{CLR_STATS_NO_ARR_HV;}
   if(esc.error){drive.current = 0;drive.speed_rpm = 0;return 2;}
-  if(mppt1.flags & 0x28 || mppt2.flags & 0x28 || (bmu.status & 0x7) || (!shunt.con_tim)){return 1;}
+  if((mppt1.flags & 0x28) || (mppt2.flags & 0x28) || (bmu.status & 0x7) || (!shunt.con_tim)){return 1;}
   return 0;
 }
 
@@ -663,7 +839,6 @@ void main_paddles (uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rg
       break;
   }
 }
-
 
 /******************************************************************************
  ** Function name:  main_lights
@@ -866,7 +1041,7 @@ void esc_reset (void)
   can_tx1_buf.MsgID = ESC_CONTROL + 3;
   can_tx1_buf.DataB = 0x0;
   can_tx1_buf.DataA = 0x0;
-  CAN1_SendMessage( &can_tx1_buf );
+  can1_send_message( &can_tx1_buf );
 }
 
 /******************************************************************************
@@ -1233,7 +1408,7 @@ void nonpersistent_load(void)
  ** Returned value: None
  **
  ******************************************************************************/
-void GPIO_init (void)
+void gpio_init (void)
 {
   /* GPIO0:
    *  PINSEL0:
@@ -1350,8 +1525,8 @@ int main (void)
   SystemInit();
   SystemCoreClockUpdate();
 
-  CAN1_Init( BITRATE500K30MHZ );
-  CAN2_Init( BITRATE125K30MHZ );
+  can1_init( BITRATE500K30MHZ );
+  can2_init( BITRATE125K30MHZ );
   CAN_SetACCF( ACCF_BYPASS );
 
   I2C1Init();
@@ -1363,7 +1538,7 @@ int main (void)
 
   ADCInit(ADC_CLK);
 
-  GPIO_init();
+  gpio_init();
 
   lcd_init();
   lcd_clear();

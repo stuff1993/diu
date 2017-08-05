@@ -44,217 +44,217 @@
 
 typedef struct MPPT_STRUCT
 {
-  /// From CAN Bus
-  uint32_t v_in;        // Input Voltage
-  uint32_t v_out;       // Output Voltage
-  uint32_t i_in;        // Input Current
-  uint32_t tmp;         // Temperature in degrees
-  uint8_t flags;
-  uint32_t avg_power;	// Average Power
+	/// From CAN Bus
+	uint32_t v_in;        // Input Voltage
+	uint32_t v_out;       // Output Voltage
+	uint32_t i_in;        // Input Current
+	uint32_t tmp;         // Temperature in degrees
+	uint8_t flags;
+	uint32_t avg_power;	// Average Power
 
 #if _MPPT_POWER
-  uint32_t watts;       // Watts into MPPT
-  float watt_hrs;       // Watt Hours
+	uint32_t watts;       // Watts into MPPT
+	float watt_hrs;       // Watt Hours
 #if _MPPT_PEAKS
-  uint32_t max_watts;   // Peak watts into MPPT
+	uint32_t max_watts;   // Peak watts into MPPT
 #endif // _MPPT_PEAKS
 #endif // _MPPT_POWER
 #if _MPPT_PEAKS
-  uint32_t max_v_in;     // Peak Input Voltage
-  uint32_t max_v_out;    // Peak Output Voltage
-  uint32_t max_i_in;     // Peak Input Current
-  uint32_t max_tmp;     // Peak Temperature in degrees
+	uint32_t max_v_in;     // Peak Input Voltage
+	uint32_t max_v_out;    // Peak Output Voltage
+	uint32_t max_i_in;     // Peak Input Current
+	uint32_t max_tmp;     // Peak Temperature in degrees
 #endif // _MPPT_PEAKS
-}MPPT;
+} MPPT;
 
 typedef struct MPPT_RELAY_STRUCT
 {
-  uint32_t data_a;
-  uint32_t data_b;
-}MPPT_RELAY;
+	uint32_t data_a;
+	uint32_t data_b;
+} MPPT_RELAY;
 
 #if _MC_VECTORS
 typedef struct VECTORS_MTRCONT_STRUCT
 {
-  float v_real;
-  float v_imag;
-  float i_real;
-  float i_imag;
-  float bemf_real;
-  float bemf_imag;
+	float v_real;
+	float v_imag;
+	float i_real;
+	float i_imag;
+	float bemf_real;
+	float bemf_imag;
 }VECTORS_MTRCONT;
 #endif // _MC_VECTORS
 
 typedef struct MOTORCONTROLLER_STRUCT
 {
-  /// From CAN Bus
-  float bus_i;          // Bus Current
-  float bus_v;          // Bus Voltage
-  float avg_power;		// Average Power
+	/// From CAN Bus
+	float bus_i;          // Bus Current
+	float bus_v;          // Bus Voltage
+	float avg_power;		// Average Power
 #if _MC_ERR
-  uint16_t error;       // Error Flags
+	uint16_t error;       // Error Flags
 #endif // _MC_ERR
 #if _MC_LIM
-  uint16_t limit;       // Limit Flags
+	uint16_t limit;       // Limit Flags
 #endif // _MC_LIM
 #if _MC_PHASE
-  float phase_c_i;       // Motor Phase C Current
-  float phase_b_i;       // Motor Phase B Current
+	float phase_c_i;       // Motor Phase C Current
+	float phase_b_i;// Motor Phase B Current
 #endif // _MC_PHASE
 #if _MC_VECTORS
-  VECTORS_MTRCONT *vectors; // Motor Vectors
+	VECTORS_MTRCONT *vectors; // Motor Vectors
 #endif // _MC_VECTORS
 #if _MC_RAILS
-  float rail_15v;       // 15V Rail Actual Voltage
-  float rail_3300mv;    // 3.3V Rail Actual Voltage
-  float rail_1900mv;    // 1.9V Rail Actual Voltage
+	float rail_15v;       // 15V Rail Actual Voltage
+	float rail_3300mv;// 3.3V Rail Actual Voltage
+	float rail_1900mv;// 1.9V Rail Actual Voltage
 #endif // _MC_RAILS
 #if _MC_TMP
-  float heatsink_tmp;   // Heatsink Temperature
-  float motor_tmp;      // Motor Temperature
-  float board_tmp;      // Board Temperature
+	float heatsink_tmp;   // Heatsink Temperature
+	float motor_tmp;      // Motor Temperature
+	float board_tmp;      // Board Temperature
 #if _MC_PEAKS // && _MC_TMP
-  float max_heathsink_tmp;
-  float max_motor_tmp;
-  float max_board_tmp;
+	float max_heathsink_tmp;
+	float max_motor_tmp;
+	float max_board_tmp;
 #endif // _MC_PEAKS
 #endif // _MC_TMP
 #if _MC_AMPHRS
-  float dc_amp_hrs;      // DC Bus AmpHrs
+	float dc_amp_hrs;      // DC Bus AmpHrs
 #endif // _MC_AMPHRS
 #if _MC_ODO
-  float odometer;       // Distance traveled since reset (m)
+	float odometer;       // Distance traveled since reset (m)
 #endif // _MC_ODO
 #if _MC_SLIP
-  float slip_speed;     // Motor Slip Speed (Hz)
+	float slip_speed;     // Motor Slip Speed (Hz)
 #endif // _MC_SLIP
 #if _MC_VELOCITY == 1
-  float velocity_kmh;
+	float velocity_kmh;
 #elif _MC_VELOCITY == 2
-  float velocity_rpm;
+	float velocity_rpm;
 #elif _MC_VELOCITY == 3
-  float velocity_kmh;
-  float velocity_rpm;
+	float velocity_kmh;
+	float velocity_rpm;
 #endif // _MC_VELOCITY
 
-  /// Calculated Values & Peaks
+	/// Calculated Values & Peaks
 #if _MC_POWER
-  float watts;          // Bus_I * Bus_V
-  float watt_hrs;        // Calculated every 10mS
+	float watts;          // Bus_I * Bus_V
+	float watt_hrs;        // Calculated every 10mS
 #if _MC_PEAKS // && _MC_POWER
-  float max_watts;
+	float max_watts;
 #endif // _MC_PEAKS
 #endif // _MC_POWER
 #if _MC_PEAKS
-  float max_bus_i;
-  float max_bus_v;
+	float max_bus_i;
+	float max_bus_v;
 #endif // MC_PEAKS
-}MOTORCONTROLLER;
+} MOTORCONTROLLER;
 
-struct BMU_STRUCT
+typedef struct BMU_STRUCT
 {
-  /// From CAN Bus
-  uint32_t bus_v;   // Battery Voltage
-  int32_t bus_i;    // Battery Output Current
-  uint32_t status;      // status Flags
+	/// From CAN Bus
+	uint32_t bus_v;   // Battery Voltage
+	int32_t bus_i;    // Battery Output Current
+	uint32_t status;      // status Flags
 #if _BMU_SOC == 1
-  float soc;            // Battery State of Charge (0 = Full)
+	float soc;            // Battery State of Charge (0 = Full)
 #elif _BMU_SOC == 2
-  float soc_per;        // Battery State of Charge as % (1 = Full)
+	float soc_per;        // Battery State of Charge as % (1 = Full)
 #elif _BMU_SOC ==3
-  float soc;
-  float soc_per;
+	float soc;
+	float soc_per;
 #endif // _BMU_SOC
 #if _BMU_BAL_SOC == 1
-  float bal_soc;        // Balance State of Charge. Ah supplied to pack since first cell began balancing
+	float bal_soc; // Balance State of Charge. Ah supplied to pack since first cell began balancing
 #elif _BMU_BAL_SOC == 2
-  float bal_soc_per;    // Balance State of Charge as %
+	float bal_soc_per;    // Balance State of Charge as %
 #elif _BMU_BAL_SOC == 3
-  float bal_soc;
-  float bal_soc_per;
+	float bal_soc;
+	float bal_soc_per;
 #endif // _BMU_BAL_SOC
 #if _BMU_THRES
-  int16_t charge_cell_v_err;    //
-  int16_t cell_tmp_margin;      //
-  int16_t discharge_cell_v_err; //
+	int16_t charge_cell_v_err;    //
+	int16_t cell_tmp_margin;//
+	int16_t discharge_cell_v_err;//
 #endif // _BMU_THRES
 #if _BMU_CAP
-  uint16_t pack_capacity;
+	uint16_t pack_capacity;
 #endif // _BMU_CAP
 #if _BMU_PRECHARGE
-  char driver_status;
-  char precharge_state;
-  uint8_t precharge_time_elapsed;
-  uint8_t precharge_timer;
+	char driver_status;
+	char precharge_state;
+	uint8_t precharge_time_elapsed;
+	uint8_t precharge_timer;
 #endif // _BMU_PRECHARGE
 #if _BMU_CELL_V
-  uint16_t min_cell_v;    // Minimum Cell Voltage
-  uint16_t max_cell_v;    // Maximum Cell Voltage
-  uint8_t cmu_min_v;      // CMU number with minimum cell voltage
-  uint8_t cmu_max_v;      // CMU number with maximum cell voltage
-  uint8_t cell_min_v;     // Cell number with minimum cell voltage
-  uint8_t cell_max_v;     // Cell number with maximum cell voltage
+	uint16_t min_cell_v;    // Minimum Cell Voltage
+	uint16_t max_cell_v;    // Maximum Cell Voltage
+	uint8_t cmu_min_v;      // CMU number with minimum cell voltage
+	uint8_t cmu_max_v;      // CMU number with maximum cell voltage
+	uint8_t cell_min_v;     // Cell number with minimum cell voltage
+	uint8_t cell_max_v;     // Cell number with maximum cell voltage
 #endif // _BMU_CELL_V
 #if _BMU_CMU_TMP
-  uint16_t min_cell_tmp;  // Minimum Cell Temperature
-  uint16_t max_cell_tmp;  // Maximum Cell Temperature
-  uint8_t cmu_min_tmp;    // CMU number with minimum cell temperature
-  uint8_t cmu_max_tmp;    // CMU number with maximum cell temperature
+	uint16_t min_cell_tmp;  // Minimum Cell Temperature
+	uint16_t max_cell_tmp;  // Maximum Cell Temperature
+	uint8_t cmu_min_tmp;    // CMU number with minimum cell temperature
+	uint8_t cmu_max_tmp;    // CMU number with maximum cell temperature
 #endif // _BMU_CMU_TMP
 #if _BMU_BAL_THRES
-  uint16_t bal_thres_rising;
-  uint16_t bal_thres_falling;
+	uint16_t bal_thres_rising;
+	uint16_t bal_thres_falling;
 #endif // _BMU_BAL_THRES
 #if _BMU_CMU_CNT
-  uint8_t cmu_count;
+	uint8_t cmu_count;
 #endif // _BMU_CMU_CNT
 #if _BMU_VER
-  uint16_t bmu_fw_ver;
-  uint8_t bmu_hw_ver;
-  uint8_t bmu_model_id;
+	uint16_t bmu_fw_ver;
+	uint8_t bmu_hw_ver;
+	uint8_t bmu_model_id;
 #endif // _BMU_VER
 #if _BMU_FAN == 1
-  uint16_t fan0_spd;
+	uint16_t fan0_spd;
 #elif _BMU_FAN == 2
-  uint16_t fan1_spd;
+	uint16_t fan1_spd;
 #elif _BMU_FAN == 3
-  uint16_t fan0_spd;
-  uint16_t fan1_spd;
+	uint16_t fan0_spd;
+	uint16_t fan1_spd;
 #endif // _BMU_FAN
 #if _BMU_12V_CONSUM
-  uint16_t fan_contactor_12v_ma;
-  uint16_t cmu_12v_ma;
+	uint16_t fan_contactor_12v_ma;
+	uint16_t cmu_12v_ma;
 #endif // _BMU_12V_CONSUM
 
-  /// Calculated & Peaks
+	/// Calculated & Peaks
 #if _BMU_POWER
-  uint32_t watts;
-  float watt_hrs;
+	uint32_t watts;
+	float watt_hrs;
 #if _BMU_PEAKS // && _BMU_POWER
-  uint32_t max_watts;
+	uint32_t max_watts;
 #endif // _BMU_PEAKS
 #endif // _BMU_POWER
 #if _BMU_PEAKS
-  uint32_t max_bus_v;
-  int32_t max_bus_i;
+	uint32_t max_bus_v;
+	int32_t max_bus_i;
 #endif // _BMU_PEKAS
-}bmu;
+} BMU;
 
 struct STATS_STRUCT
 {
-  unsigned int ramp_speed;  // .1%/cycle
-  float odometer;           // km
-  float odometer_tr;        // km
-  float max_speed;          // kmh
-  float cruise_speed;       // kmh
-  uint16_t hv_counter;      //
-  uint8_t buz_tim;          // 10mS ticks to sound buzzer
-  uint8_t strobe_tim;
-  uint8_t paddle_mode;
-  uint32_t avg_power_counter;
-  volatile uint8_t flags;
-  volatile uint8_t errors;
-}stats;
+	unsigned int ramp_speed;  // .1%/cycle
+	float odometer;           // km
+	float odometer_tr;        // km
+	float max_speed;          // kmh
+	float cruise_speed;       // kmh
+	uint16_t hv_counter;      //
+	uint8_t buz_tim;          // 10mS ticks to sound buzzer
+	uint8_t strobe_tim;
+	uint8_t paddle_mode;
+	uint32_t avg_power_counter;
+	volatile uint8_t flags;
+	volatile uint8_t errors;
+} stats;
 
 /// stats.flags
 #define STATS_DRV_MODE       ((stats.flags & 0x01) >> 0)
@@ -323,25 +323,23 @@ struct STATS_STRUCT
 #define TOG_STATS_BMU_ACK    stats.errors ^= 0x40;
 #define TOG_STATS_EUNUSED_3  stats.errors ^= 0x80;
 
-
 struct DRIVE_STRUCT
 {
-  float speed_rpm;
-  float current;
-}drive;
+	float speed_rpm;
+	float current;
+} drive;
 
-
-struct CLOCK_STRUCT
+typedef struct CLOCK_STRUCT
 {
-  uint8_t   T_mS;   // (mS / 10)
-  uint8_t   T_S;
-  uint8_t   T_M;
-  uint8_t   T_H;
-  uint32_t  T_D;
-  uint8_t   blink;  // half second toggle bit
-}clock;
+	uint8_t T_mS;   // (mS / 10)
+	uint8_t T_S;
+	uint8_t T_M;
+	uint8_t T_H;
+	uint32_t T_D;
+	uint8_t blink;  // half second toggle bit
+} CLOCK;
 
-struct SHUNT_STRUCT
+typedef struct SHUNT_STRUCT
 {
 	float bus_v;
 	float bus_i;
@@ -353,6 +351,6 @@ struct SHUNT_STRUCT
 	float max_bus_i;
 	float max_watts;
 	uint8_t con_tim;
-}shunt;
+} SHUNT;
 
 #endif /* STRUCT_H_ */

@@ -127,52 +127,56 @@ explicit EXT IDs, and group EXT IDs. */
 #define ACCF_IDEN_NUM			4
 
 /* Identifiers for FULLCAN, EXP STD, GRP STD, EXP EXT, GRP EXT */
-//#define MPPT_RPLY     0x060   // Distance to MPPT reply packet 0b000001100000
 
+// Add to base to skip CMU packets from BMU
+#define BMU_INFO        		0xF4
 
 /// CAN BASE ADDRESSES
 #ifndef ESC_BASE
-#define ESC_BASE        0x400               // Base address of motor controller
+#define ESC_BASE        		0x400
 #endif
 
 #ifndef ESC_CONTROL
-#define ESC_CONTROL     0x500               // Base for control packets for motor controller(s)
+#define ESC_CONTROL     		0x500
 #endif
 
+// Messages from dash
 #ifndef DASH_RPLY
-#define DASH_RPLY       0x510               // Messages from dash
+#define DASH_RPLY       		0x510
 #endif
 
+// Messages to dash
 #ifndef DASH_RQST
-#define DASH_RQST       0x520               // Messages to dash
+#define DASH_RQST       		0x520
 #endif
 
 #ifndef BMU_SHUNT
-#define BMU_SHUNT		0x530				// BMU Shunt
+#define BMU_SHUNT				0x530
 #endif
 
 #ifndef BMU_BASE
-#define BMU_BASE        0x600               // BMU Base
+#define BMU_BASE        		0x600
 #endif
 
-#ifndef MPP1_BASE
-#define MPPT1_BASE      0x716               // DriveTek Master Request 0b011100010110
+// DriveTek Master Request 0b011100010110
+#ifndef MPPT1_BASE
+#define MPPT1_BASE      		0x716
 #endif
 
+// DriveTek Master Request 0b011100011001
 #ifndef MPPT2_BASE
-#define MPPT2_BASE      0x719               // DriveTek Master Request 0b011100011001
+#define MPPT2_BASE      		0x719
 #endif
 
+// DriveTek Slave Answer Frame -- 0110 0b011101110110
 #ifndef MPPT1_RPLY
-#define MPPT1_RPLY      MPPT1_BASE + 0x060  // DriveTek Slave Answer Frame -- 0110 0b011101110110
+#define MPPT1_RPLY      		MPPT1_BASE + 0x060
 #endif
 
+// DriveTek Slave Answer Frame -- 1001 0b011101111001
 #ifndef MPPT2_RPLY
-#define MPPT2_RPLY      MPPT2_BASE + 0x060  // DriveTek Slave Answer Frame -- 1001 0b011101111001
+#define MPPT2_RPLY      		MPPT2_BASE + 0x060
 #endif
-
-
-#define BMU_INFO        0xF4                // Add to base to skip CMU packets from BMU
 
 #define GRP_STD_ID				0x200
 #define EXP_EXT_ID				0x100000
@@ -190,22 +194,16 @@ typedef struct
 	uint32_t DataB;	// CAN Message Data Bytes 4-7
 } CAN_MSG;
 
+/// PUBLIC FUNCTIONS
+uint32_t can1_init(uint32_t can_btr);
+uint32_t can2_init(uint32_t can_btr);
+void CAN_SetACCF_Lookup(void);
+void CAN_SetACCF(uint32_t ACCFMode);
+uint32_t can1_send_message(CAN_MSG* pTXBuf);
+uint32_t can2_send_message(CAN_MSG* pTXBuf);
 
-/**************************************************************************
-PUBLIC FUNCTIONS
-***************************************************************************/
-uint32_t CAN1_Init( uint32_t can_btr );
-uint32_t CAN2_Init( uint32_t can_btr );
-void CAN_SetACCF_Lookup( void );
-void CAN_SetACCF( uint32_t ACCFMode );
-uint32_t CAN1_SendMessage( CAN_MSG* pTXBuf );
-uint32_t CAN2_SendMessage( CAN_MSG* pTXBuf );
-void setCANBUS1(void);
-void setCANBUS2(void);
+/// Must implement
+void can1_unpack(CAN_MSG *_msg);
+void can2_unpack(CAN_MSG *_msg);
 
 #endif	// __CAN_H
-
-/******************************************************************************
-**                            End Of File
-******************************************************************************/
-

@@ -9,6 +9,7 @@
 #define DASH_H_
 
 #include "struct.h"
+#include "can.h"
 
 #ifndef AUTO_SWOC
 #define AUTO_SWOC 1 // auto reset SWOCs
@@ -118,34 +119,38 @@
 #define ADD_MPPT2WHR 20
 
 /// Function Prototypes ///
-void      BOD_IRQHandler      (void);
-void      main_mppt_poll      (void);
-void      mppt_data_extract   (MPPT *_MPPT);
-void      main_input_check    (void);
-int       main_fault_check    (void);
-void      main_drive          (void);
-void      main_paddles        (uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn);
-void      main_lights         (void);
-void      main_can_handler    (void);
-void      main_calc           (void);
-void      main_HV             (void);
-void      esc_reset           (void);
-uint32_t  EE_read             (uint16_t _EEadd);
-uint32_t  EE_seq_read         (uint16_t _EEadd, int _len);
-void      EE_write            (uint16_t _EEadd, uint32_t data);
-uint32_t  I2C_read            (uint16_t _EEadd);
-void      I2C_seq_read        (uint16_t _EEadd, int read_len);
-void      I2C_write           (uint16_t _EEadd, uint8_t data0, uint8_t data1, uint8_t data2, uint8_t data3);
-uint32_t  iir_filter_uint     (uint32_t _data_in, uint32_t _cur_data, uint16_t _gain);
-int32_t   iir_filter_int      (int32_t _data_in, int32_t _cur_data, uint16_t _gain);
-float     iir_filter_float    (float _data_in, float _cur_data, uint16_t _gain);
-void      nonpersistent_load  (void);
-void      persistent_load     (void);
-void      persistent_store    (void);
-void      GPIO_init           (void);
-void      buzzer              (uint8_t val);
-void      BOD_init            (void);
-void	  extractMPPT1DATA	  (void);
-void	  extractMPPT2DATA	  (void);
+void      	BOD_IRQHandler      (void);
+void      	main_mppt_poll      (void);
+void      	mppt_data_extract   (MPPT *_MPPT);
+void 		esc_data_extract	(MOTORCONTROLLER *_esc, CAN_MSG *_msg);
+void 		dash_data_extract	(CAN_MSG *_msg);
+void 		shunt_data_extract	(SHUNT *_shunt, CAN_MSG *_msg);
+void 		bmu_data_extract	(BMU *_shunt, CAN_MSG *_msg);
+void      	main_input_check    (void);
+int       	main_fault_check    (void);
+void      	main_drive          (void);
+void      	main_paddles        (uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn);
+void      	main_lights         (void);
+void      	main_can_handler    (void);
+void      	main_calc           (void);
+void      	main_HV             (void);
+void      	esc_reset           (void);
+uint32_t  	EE_read             (uint16_t _EEadd);
+uint32_t  	EE_seq_read         (uint16_t _EEadd, int _len);
+void      	EE_write            (uint16_t _EEadd, uint32_t data);
+uint32_t  	I2C_read            (uint16_t _EEadd);
+void      	I2C_seq_read        (uint16_t _EEadd, int read_len);
+void      	I2C_write           (uint16_t _EEadd, uint8_t data0, uint8_t data1, uint8_t data2, uint8_t data3);
+uint32_t  	iir_filter_uint     (uint32_t _data_in, uint32_t _cur_data, uint16_t _gain);
+int32_t   	iir_filter_int      (int32_t _data_in, int32_t _cur_data, uint16_t _gain);
+float     	iir_filter_float    (float _data_in, float _cur_data, uint16_t _gain);
+void      	nonpersistent_load  (void);
+void      	persistent_load     (void);
+void      	persistent_store    (void);
+void      	gpio_init           (void);
+void      	buzzer              (uint8_t val);
+void      	BOD_init            (void);
+void	  	extractMPPT1DATA	(void);
+void	  	extractMPPT2DATA	(void);
 
 #endif /* DASH_H_ */

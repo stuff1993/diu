@@ -23,6 +23,9 @@
 #include "dash.h"
 #include "timer.h"
 
+extern CLOCK clock;
+extern BMU bmu;
+extern SHUNT shunt;
 extern MOTORCONTROLLER esc;
 extern MPPT mppt1, mppt2;
 extern CAN_MSG can_tx1_buf;
@@ -1348,7 +1351,7 @@ void menu_comms (void) // errors[2]
       can_tx1_buf.MsgID = DASH_RPLY + 1;
       can_tx1_buf.DataA = 0xFF;
       can_tx1_buf.DataB = 0x0;
-      CAN1_SendMessage( &can_tx1_buf );
+      can1_send_message( &can_tx1_buf );
     }
     CLR_STATS_COMMS;
   }
@@ -1361,7 +1364,7 @@ void menu_comms (void) // errors[2]
       can_tx1_buf.MsgID = DASH_RPLY + 1;
       can_tx1_buf.DataA = 0x0;
       can_tx1_buf.DataB = 0x0;
-      CAN1_SendMessage( &can_tx1_buf );
+      can1_send_message( &can_tx1_buf );
     }
     CLR_STATS_COMMS;
   }
