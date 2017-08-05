@@ -15,7 +15,6 @@
 CAN_MSG can_rx1_buf;
 CAN_MSG can_rx2_buf;
 extern volatile uint8_t can_rx1_done;
-extern MOTORCONTROLLER esc;
 
 volatile uint32_t CANStatus;
 #if CAN_RX_COUNTERS
@@ -36,76 +35,74 @@ volatile uint32_t CANActivityInterruptFlag = 0;
 #endif
 
 /******************************************************************************
-** Function name: CAN_ISR_Rx1
-**
-** Description:   CAN Rx1 interrupt handler
-**
-** Parameters:      None
-** Returned value:  None
-**
-******************************************************************************/
-void CAN_ISR_Rx1( void )
+ ** Function name: CAN_ISR_Rx1
+ **
+ ** Description:   CAN Rx1 interrupt handler
+ **
+ ** Parameters:      None
+ ** Returned value:  None
+ **
+ ******************************************************************************/
+void CAN_ISR_Rx1(void)
 {
-  uint32_t * pDest = (uint32_t *)&can_rx1_buf;
+	uint32_t * pDest = (uint32_t *) &can_rx1_buf;
 
-  *pDest = LPC_CAN1->RFS; // Frame
-  pDest++;
+	*pDest = LPC_CAN1->RFS; // Frame
+	pDest++;
 
-  *pDest = LPC_CAN1->RID; // ID
-  pDest++;
+	*pDest = LPC_CAN1->RID; // ID
+	pDest++;
 
-  *pDest = LPC_CAN1->RDA; // DataA
-  pDest++;
+	*pDest = LPC_CAN1->RDA; // DataA
+	pDest++;
 
-  *pDest = LPC_CAN1->RDB; // DataB
-  pDest++;
+	*pDest = LPC_CAN1->RDB; // DataB
+	pDest++;
 
-  can1_unpack(&can_rx1_buf);
-  LPC_CAN1->CMR = 0x4; // Release Receive Buffer
+	can1_unpack(&can_rx1_buf);
+	LPC_CAN1->CMR = 0x4; // Release Receive Buffer
 }
 
 /******************************************************************************
-** Function name:   CAN_ISR_Rx2
-**
-** Description:     CAN Rx2 interrupt handler
-**
-** Parameters:      None
-** Returned value:  None
-**
-******************************************************************************/
-void CAN_ISR_Rx2( void )
+ ** Function name:   CAN_ISR_Rx2
+ **
+ ** Description:     CAN Rx2 interrupt handler
+ **
+ ** Parameters:      None
+ ** Returned value:  None
+ **
+ ******************************************************************************/
+void CAN_ISR_Rx2(void)
 {
-  uint32_t *pDest;
+	uint32_t *pDest;
 
-  /* initialize destination pointer	*/
-  pDest = (uint32_t *)&can_rx2_buf;
-  *pDest = LPC_CAN2->RFS;  /* Frame	*/
+	/* initialize destination pointer	*/
+	pDest = (uint32_t *) &can_rx2_buf;
+	*pDest = LPC_CAN2->RFS; /* Frame	*/
 
-  pDest++;
-  *pDest = LPC_CAN2->RID; /* ID	*/
+	pDest++;
+	*pDest = LPC_CAN2->RID; /* ID	*/
 
-  pDest++;
-  *pDest = LPC_CAN2->RDA; /* Data A	*/
+	pDest++;
+	*pDest = LPC_CAN2->RDA; /* Data A	*/
 
-  pDest++;
-  *pDest = LPC_CAN2->RDB; /* Data B	*/
+	pDest++;
+	*pDest = LPC_CAN2->RDB; /* Data B	*/
 
-  if(can_rx2_buf.MsgID == MPPT1_RPLY){extractMPPT1DATA();}//{mppt_data_extract(&mppt1);}
-  else if(can_rx2_buf.MsgID == MPPT2_RPLY){extractMPPT2DATA();}//{mppt_data_extract(&mppt2);}
-
-  LPC_CAN2->CMR = 0x4; /* release receive buffer */
-  return;
+	can2_unpack(&can_rx2_buf);
+	LPC_CAN2->CMR = 0x4; /* release receive buffer */
+	return;
 }
 
 /*****************************************************************************
-** Function name:   CAN_Handler
-**
-** Descriptions:    CAN interrupt handler
-**
-** parameters:      None
-** Returned value:  None
-**
-*****************************************************************************/
+ ** Function name:   CAN_Handler
+ **
+ ** Descriptions:    CAN interrupt handler
+ **
+ ** parameters:      None
+ ** Returned value:  None
+ **
+ *****************************************************************************/
 void CAN_IRQHandler(void)
 {
 	CANStatus = LPC_CANCR->CANRxSR;
@@ -140,94 +137,94 @@ void CAN_IRQHandler(void)
 
 #if CAN_WAKEUP
 /******************************************************************************
-** Function name:   CANActivity_IRQHandler
-**
-** Descriptions:    Wake up from CAN handler
-**
-** parameters:      None
-** Returned value:  None
-**
-******************************************************************************/
+ ** Function name:   CANActivity_IRQHandler
+ **
+ ** Descriptions:    Wake up from CAN handler
+ **
+ ** parameters:      None
+ ** Returned value:  None
+ **
+ ******************************************************************************/
 void CANActivity_IRQHandler (void)
 {
-  can_rx2_done = TRUE;
-  CANActivityInterruptFlag = 1;
+	can_rx2_done = TRUE;
+	CANActivityInterruptFlag = 1;
 
-  LPC_SC->CANSLEEPCLR = (0x1<<1)|(0x1<<2);
-  LPC_CAN1->MOD = LPC_CAN2->MOD &= ~(0x1<<4);
-  LPC_SC->CANWAKEFLAGS = (0x1<<1)|(0x1<<2);
-  return;
+	LPC_SC->CANSLEEPCLR = (0x1<<1)|(0x1<<2);
+	LPC_CAN1->MOD = LPC_CAN2->MOD &= ~(0x1<<4);
+	LPC_SC->CANWAKEFLAGS = (0x1<<1)|(0x1<<2);
+	return;
 }
 #endif
 
 /******************************************************************************
-** Function name:   CAN_Init
-**
-** Descriptions:    Initialize CAN, install CAN interrupt handler
-**
-** parameters:      bitrate
-** Returned value:  true or false, false if initialization failed.
-**
-******************************************************************************/
-uint32_t can1_init( uint32_t can_btr )
+ ** Function name:   can1_init
+ **
+ ** Descriptions:    Initialize CAN, install CAN interrupt handler
+ **
+ ** parameters:      bitrate
+ ** Returned value:  true or false, false if initialization failed.
+ **
+ ******************************************************************************/
+uint32_t can1_init(uint32_t can_btr)
 {
-  can_rx1_done = FALSE;
+	can_rx1_done = FALSE;
 
-  LPC_SC->PCONP |= (1<<13);  /* Enable CAN1 clock */
+	LPC_SC->PCONP |= (1 << 13); /* Enable CAN1 clock */
 
-  LPC_PINCON->PINSEL1 |= (1<<13)|(1<<12)|(1<<11)|(1<<10);
+	LPC_PINCON->PINSEL1 |= (1 << 13) | (1 << 12) | (1 << 11) | (1 << 10);
 
-  LPC_CAN1->MOD = 1;    /* Reset CAN */
-  LPC_CAN1->IER = 0;    /* Disable Receive Interrupt */
-  LPC_CAN1->GSR = 0;    /* Reset error counter when CANxMOD is in reset	*/
+	LPC_CAN1->MOD = 1; /* Reset CAN */
+	LPC_CAN1->IER = 0; /* Disable Receive Interrupt */
+	LPC_CAN1->GSR = 0; /* Reset error counter when CANxMOD is in reset	*/
 
-  LPC_CAN1->BTR = can_btr;
-  LPC_CAN1->MOD = 0x0;  /* CAN in normal operation mode */
+	LPC_CAN1->BTR = can_btr;
+	LPC_CAN1->MOD = 0x0; /* CAN in normal operation mode */
 
-  NVIC_EnableIRQ(CAN_IRQn);
+	NVIC_EnableIRQ(CAN_IRQn);
 
-  LPC_CAN1->IER = 0x01; /* Enable receive interrupts */
-  return( TRUE );
+	LPC_CAN1->IER = 0x01; /* Enable receive interrupts */
+	return ( TRUE);
 }
 
 /******************************************************************************
-** Function name:   CAN_Init
-**
-** Descriptions:    Initialize CAN, install CAN interrupt handler
-**
-** parameters:      bitrate
-** Returned value:  true or false, false if initialization failed.
-**
-******************************************************************************/
-uint32_t can2_init( uint32_t can_btr )
+ ** Function name:   can2_init
+ **
+ ** Descriptions:    Initialize CAN, install CAN interrupt handler
+ **
+ ** parameters:      bitrate
+ ** Returned value:  true or false, false if initialization failed.
+ **
+ ******************************************************************************/
+uint32_t can2_init(uint32_t can_btr)
 {
-  LPC_SC->PCONP |= (1<<14);  /* Enable CAN2 clock */
+	LPC_SC->PCONP |= (1 << 14); /* Enable CAN2 clock */
 
-  LPC_PINCON->PINSEL0 |= (1<<9)|(1<<11);
+	LPC_PINCON->PINSEL0 |= (1 << 9) | (1 << 11);
 
-  LPC_CAN2->MOD = 1;    /* Reset CAN */
-  LPC_CAN2->IER = 0;    /* Disable Receive Interrupt */
-  LPC_CAN2->GSR = 0;    /* Reset error counter when CANxMOD is in reset	*/
+	LPC_CAN2->MOD = 1; /* Reset CAN */
+	LPC_CAN2->IER = 0; /* Disable Receive Interrupt */
+	LPC_CAN2->GSR = 0; /* Reset error counter when CANxMOD is in reset	*/
 
-  LPC_CAN2->BTR = can_btr;
-  LPC_CAN2->MOD = 0x0;  /* CAN in normal operation mode */
+	LPC_CAN2->BTR = can_btr;
+	LPC_CAN2->MOD = 0x0; /* CAN in normal operation mode */
 
-  NVIC_EnableIRQ(CAN_IRQn);
+	NVIC_EnableIRQ(CAN_IRQn);
 
-  LPC_CAN2->IER = 0x01; /* Enable receive interrupts */
-  return( TRUE );
+	LPC_CAN2->IER = 0x01; /* Enable receive interrupts */
+	return ( TRUE);
 }
 
 /******************************************************************************
-** Function name:   CAN_SetACCF_Lookup
-**
-** Descriptions:    Initialize CAN, install CAN interrupt handler
-**
-** parameters:      bitrate
-** Returned value:  true or false, false if initialization failed.
-**
-******************************************************************************/
-void CAN_SetACCF_Lookup( void )
+ ** Function name:   CAN_SetACCF_Lookup
+ **
+ ** Descriptions:    Initialize CAN, install CAN interrupt handler
+ **
+ ** parameters:      bitrate
+ ** Returned value:  true or false, false if initialization failed.
+ **
+ ******************************************************************************/
+void CAN_SetACCF_Lookup(void)
 {
   uint32_t address = 0;
   uint32_t i;
@@ -315,7 +312,7 @@ void CAN_SetACCF( uint32_t ACCFMode )
 }
 
 /******************************************************************************
-** Function name:   CAN1_SendMessage
+** Function name:   can1_send_message
 **
 ** Descriptions:    Send message block to CAN1
 **
@@ -364,7 +361,7 @@ uint32_t can1_send_message( CAN_MSG *pTxBuf )
 }
 
 /******************************************************************************
-** Function name:   CAN2_SendMessage
+** Function name:   can2_send_message
 **
 ** Descriptions:    Send message block to CAN2
 **
