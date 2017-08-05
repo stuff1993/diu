@@ -34,6 +34,14 @@ uint16_t CAN2ErrCount = 0;
 volatile uint32_t CANActivityInterruptFlag = 0;
 #endif
 
+
+/// Default unpacker
+__attribute__ ((weak)) void default_can_unpacker(CAN_MSG *_msg);
+
+/// Must implement
+void can1_unpack(CAN_MSG *_msg) __attribute__ ((weak, alias ("default_can_unpacker")));
+void can2_unpack(CAN_MSG *_msg) __attribute__ ((weak, alias ("default_can_unpacker")));
+
 /******************************************************************************
  ** Function name: CAN_ISR_Rx1
  **
@@ -407,4 +415,9 @@ uint32_t can2_send_message( CAN_MSG *pTxBuf )
   return ( TRUE );
   }
   return ( FALSE );
+}
+
+__attribute__ ((section(".after_vectors")))
+void default_can_unpacker(CAN_MSG *_msg)
+{ if(1) {}
 }
