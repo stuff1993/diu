@@ -1199,48 +1199,6 @@ void I2C_write (uint16_t _EEadd, uint8_t data0, uint8_t data1, uint8_t data2, ui
 }
 
 /******************************************************************************
- ** Function name:  iir_filter_uint
- **
- ** Description:    Filter to flatten out erratic data reads
- **
- ** Parameters:     1. Input data
- **                 2. Existing data
- **                 3. Gain factor
- ** Returned value: Smoothed value
- **
- ******************************************************************************/
-uint32_t iir_filter_uint (uint32_t _data_in, uint32_t _cur_data, uint16_t _gain)
-{return (((_gain-1)*_cur_data)+_data_in)/_gain;}
-
-/******************************************************************************
- ** Function name:  iir_filter_int
- **
- ** Description:    Filter to flatten out erratic data reads
- **
- ** Parameters:     1. Input data
- **                 2. Existing data
- **                 3. Gain factor
- ** Returned value: Smoothed value
- **
- ******************************************************************************/
-int32_t iir_filter_int (int32_t _data_in, int32_t _cur_data, uint16_t _gain)
-{return (((_gain-1)*_cur_data)+_data_in)/_gain;}
-
-/******************************************************************************
- ** Function name:  iir_filter_float
- **
- ** Description:    Filter to flatten out erratic data reads
- **
- ** Parameters:     1. Input data
- **                 2. Existing data
- **                 3. Gain factor
- ** Returned value: Smoothed value
- **
- ******************************************************************************/
-float iir_filter_float (float _data_in, float _cur_data, uint16_t _gain)
-{return (((_gain-1)*_cur_data)+_data_in)/_gain;}
-
-/******************************************************************************
  ** Function name:  load_persistent
  **
  ** Description:    Restores persistent variables from EEPROM
