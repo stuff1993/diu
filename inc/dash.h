@@ -121,7 +121,7 @@
 /// Function Prototypes ///
 void      	BOD_IRQHandler      (void);
 void      	main_mppt_poll      (void);
-void      	mppt_data_extract   (MPPT *_MPPT);
+void      	mppt_data_extract   (MPPT *_mppt, CAN_MSG *_msg);
 void 		esc_data_extract	(MOTORCONTROLLER *_esc, CAN_MSG *_msg);
 void 		dash_data_extract	(CAN_MSG *_msg);
 void 		shunt_data_extract	(SHUNT *_shunt, CAN_MSG *_msg);
@@ -147,7 +147,7 @@ void      	persistent_store    (void);
 void      	gpio_init           (void);
 void      	buzzer              (uint8_t val);
 void      	BOD_init            (void);
-void	  	extractMPPT1DATA	(void);
-void	  	extractMPPT2DATA	(void);
+//void	  	extractMPPT1DATA	(void);
+//void	  	extractMPPT2DATA	(void);
 
 #endif /* DASH_H_ */

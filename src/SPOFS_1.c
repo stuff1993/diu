@@ -17,6 +17,7 @@
 #include <stdio.h>
 
 #include "type.h"
+#include "iirfilter.h"
 #include "inttofloat.h"
 #include "timer.h"
 #include "lcd.h"
@@ -330,8 +331,19 @@ void can1_unpack(CAN_MSG *_msg)
 	{
 		shunt_data_extract(&shunt, _msg);
 	}
+	else if (can_rx2_buf.MsgID == MPPT1_RPLY)
+	{
+		mppt_data_extract(&mppt1, _msg);
+		//extractMPPT1DATA();
+	}
+	else if (can_rx2_buf.MsgID == MPPT2_RPLY)
+	{
+		mppt_data_extract(&mppt2, _msg);
+		//extractMPPT2DATA();
+	}
 }
 
+/*
 void extractMPPT1DATA(void)
 {
 	uint32_t RawDATA_A = can_rx2_buf.DataA;
@@ -416,55 +428,53 @@ void extractMPPT2DATA(void)
 	mppt2.v_out = tempVOLT_OUT;
 	mppt2.flags |= 0x3;
 }
+*/
 
 /******************************************************************************
- ** Function name:  mppt_data_extract
+ ** Function:    mppt_data_extract
  **
- ** Description:    Extracts data from CAN 2 Rx buffer into MPPT structure.
+ ** Description: Extracts data from CAN message into MPPT structure.
+ ** 			 Uses DriveTek message structure.
  **
- ** Parameters:     1. Address of MPPT to extract to
- ** Returned value: None
+ ** Parameters:  1. Address of MPPT to extract to
+ ** 			 2. CAN message to extract from
+ ** Return:      None
  **
  ******************************************************************************/
-void mppt_data_extract (MPPT *_MPPT)
+void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg)
 {
-  uint32_t _VIn = 0;
-  uint32_t _IIn = 0;
-  uint32_t _VOut = 0;
+	// TODO: Test the shit out of this
+	uint32_t _v_in = 0;
+	uint32_t _i_in = 0;
+	uint32_t _v_out = 0;
 
-  uint32_t _Data_A = can_rx2_buf.DataA;
-  uint32_t _Data_B = can_rx2_buf.DataB;
+	uint32_t _data_a = _msg->DataA;
+	uint32_t _data_b = _msg->DataB;
 
-  can_tx1_buf.Frame = 0x00070000;
-  can_tx1_buf.MsgID = can_rx2_buf.MsgID;
-  can_tx1_buf.DataA = _Data_A;
-  can_tx1_buf.DataB = _Data_B;
-  can1_send_message( &can_tx1_buf );
+	// Status Flags
+	_mppt->flags &= 0xC3;
+	_mppt->flags |= ((_data_a & 0xF0) >> 2);
 
-  // Status Flags
-  _MPPT->flags &= 0xC3;
-  _MPPT->flags |= ((_Data_A & 0xF0) >> 2);
+	// Power Variables
+	_v_in |= ((_data_a & 0x3) << 8);     // Masking and shifting the upper 2 MSB
+	_v_in |= ((_data_a & 0xFF00) >> 8);  // Masking and shifting the lower 8 LSB
+	_v_in *= 1.50;                        // Scaling
 
-  // Power Variables
-  _VIn |= ((_Data_A & 0b11) << 8);             // Masking and shifting the upper 2 MSB
-  _VIn |= ((_Data_A & 0xFF00) >> 8);    // Masking and shifting the lower 8 LSB
-  _VIn *= 1.50;                         // Scaling
+	_data_a = (_data_a >> 16);
+	_i_in |= ((_data_a & 0x3) << 8);     // Masking and shifting the lower 8 LSB
+	_i_in |= ((_data_a & 0xFF00) >> 8);  // Masking and shifting the upper 2 MSB
+	_i_in *= 0.87;                        // Scaling
 
-  _Data_A = (_Data_A >> 16);
-  _IIn |= ((_Data_A & 0b11) << 8);             // Masking and shifting the lower 8 LSB
-  _IIn |= ((_Data_A & 0xFF00) >> 8);    // Masking and shifting the upper 2 MSB
-  _IIn *= 0.87;                         // Scaling
+	_v_out |= ((_data_b & 0x3) << 8);    // Masking and shifting the upper 2 MSB
+	_v_out |= ((_data_b & 0xFF00) >> 8); // Masking and shifting the lower 8 LSB
+	_v_out *= 2.10;                       // Scaling
 
-  _VOut |= ((_Data_B & 0b11) << 8);            // Masking and shifting the upper 2 MSB
-  _VOut |= ((_Data_B & 0xFF00) >> 8);  // Masking and shifting the lower 8 LSB
-  _VOut *= 2.10;                       // Scaling
-
-  // Update the structure after IIR filtering
-  _MPPT->tmp = iir_filter_uint(((_Data_B & 0xFF0000) >> 16), _MPPT->tmp, IIR_GAIN_THERMAL);
-  _MPPT->v_in = iir_filter_uint(_VIn, _MPPT->v_in, IIR_GAIN_ELECTRICAL);
-  _MPPT->i_in = iir_filter_uint(_IIn, _MPPT->i_in, IIR_GAIN_ELECTRICAL);
-  _MPPT->v_out = iir_filter_uint(_VOut, _MPPT->v_out, IIR_GAIN_ELECTRICAL);
-  _MPPT->flags |= 0x03; // Connection timing bits
+	// Update the structure after IIR filtering
+	_mppt->tmp = iir_filter_uint(((_data_b & 0xFF0000) >> 16), _mppt->tmp, IIR_GAIN_THERMAL);
+	_mppt->v_in = iir_filter_uint(_v_in, _mppt->v_in, IIR_GAIN_ELECTRICAL);
+	_mppt->i_in = iir_filter_uint(_i_in, _mppt->i_in, IIR_GAIN_ELECTRICAL);
+	_mppt->v_out = iir_filter_uint(_v_out, _mppt->v_out, IIR_GAIN_ELECTRICAL);
+	_mppt->flags |= 0x03; // Connection timing bits
 }
 
 /******************************************************************************
