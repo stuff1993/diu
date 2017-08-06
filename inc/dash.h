@@ -47,6 +47,9 @@
 #define FAULT_ON        LPC_GPIO0->FIOSET |= (1<<27);
 #define FAULT_OFF       LPC_GPIO0->FIOCLR |= (1<<27);
 
+#define HV_ON           LPC_GPIO1->FIOSET |= (1<<8);
+#define HV_OFF          LPC_GPIO1->FIOCLR |= (1<<8);
+
 #define BLINKER_R_ON    LPC_GPIO1->FIOSET |= (1<<19);LPC_GPIO3->FIOSET |= (1<<26);
 #define BLINKER_R_OFF   LPC_GPIO1->FIOCLR |= (1<<19);LPC_GPIO3->FIOCLR |= (1<<26);
 
