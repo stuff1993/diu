@@ -1101,24 +1101,6 @@ void main_calc(void)
 }
 
 /******************************************************************************
- ** Function:    main_HV
- **
- ** Description: Controls HV contactor
- **
- ** Parameters:  None
- ** Return:      None
- **
- ******************************************************************************/
-void main_HV (void)
-{
-	if(esc.bus_v > 90 && esc.bus_v > (0.9 * shunt.bus_v) && esc.bus_v < (1.1 * shunt.bus_v) && stats.hv_counter<1100){stats.hv_counter++;}
-	else if(stats.hv_counter){stats.hv_counter--;}
-
-	if(stats.hv_counter>1000 && !STATS_ARMED){buzzer(50);SET_STATS_ARMED;HV_ON;}
-	else if(stats.hv_counter<100){CLR_STATS_ARMED;HV_OFF;}
-}
-
-/******************************************************************************
  ** Function:    esc_reset
  **
  ** Description: Resets motorcontroller(s) with CAN packet
@@ -1530,15 +1512,17 @@ int main(void)
 		delayMs(1, 1000);
 	}
 
+	// Exiting this loop ends the program
 	while (1)
-	{ // Exiting this loop ends the program
-		if ((esc.error & 0x1) && !STATS_HWOC_ACK) // on unacknowledged HWOC error, show error screen
+	{
+		if ((esc.error & 0x1) && !STATS_HWOC_ACK)
 		{
+			// on unacknowledged HWOC error, show error screen
 			menu.errors[1]();
 		}
-		else if ((esc.error & 0x2) && !STATS_SWOC_ACK && !AUTO_SWOC
-				&& menu.driver) // show SWOC screen when auto reset off and not on display mode and error not acknowledged
+		else if ((esc.error & 0x2) && !STATS_SWOC_ACK && !AUTO_SWOC && menu.driver)
 		{
+			// show SWOC screen when auto reset off and not on display mode and error not acknowledged
 			menu.errors[0]();
 		}
 		else if (STATS_COMMS)
@@ -1583,7 +1567,6 @@ int main(void)
 		main_lights();
 		main_can_handler();
 		main_calc();
-		main_HV();
 		main_driver_check();
 	}
 
