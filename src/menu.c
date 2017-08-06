@@ -1218,11 +1218,11 @@ void menu_runtime (void)
   lcd_putstring(1,0, buffer);
   if(len<20){_lcd_padding(1, len, 20 - len);}
 
-  len = sprintf(buffer, "%luD %02dhr", clock.T_D, clock.T_H);
+  len = sprintf(buffer, "%luD %02dhr", clock.t_d, clock.t_h);
   lcd_putstring(2,0, buffer);
   if(len<20){_lcd_padding(2, len, 20 - len);}
 
-  len = sprintf(buffer, "%02dm %02d.%01ds", clock.T_M, clock.T_S, clock.T_mS/10);
+  len = sprintf(buffer, "%02dm %02d.%01ds", clock.t_m, clock.t_s, clock.t_ms/10);
   lcd_putstring(3,0, buffer);
   if(len<20){_lcd_padding(3, len, 20 - len);}
 }

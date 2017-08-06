@@ -92,10 +92,10 @@ void BOD_IRQHandler (void)
  ******************************************************************************/
 void SysTick_Handler (void)
 {
-  clock.T_mS++;
+  clock.t_ms++;
 
   // MinorSec: DIU CAN Heart Beat
-  if((!(clock.T_mS % 10)) && STATS_ARMED) // Every 100 mS send heart beat CAN packets
+  if((!(clock.t_ms % 10)) && STATS_ARMED) // Every 100 mS send heart beat CAN packets
   {
     can_tx1_buf.Frame = 0x00080000;
     can_tx1_buf.MsgID = ESC_CONTROL + 1;
@@ -137,9 +137,9 @@ void SysTick_Handler (void)
   if(esc.velocity_kmh > 0){stats.odometer += esc.velocity_kmh/360000.0;stats.odometer_tr += esc.velocity_kmh/360000.0;}
   else{stats.odometer -= esc.velocity_kmh/360000.0;stats.odometer_tr -= esc.velocity_kmh/360000.0;}
 
-  if(clock.T_mS >= 100) // Calculate time
+  if(clock.t_ms >= 100) // Calculate time
   {
-    clock.T_mS = 0;clock.T_S++;
+    clock.t_ms = 0;clock.t_s++;
 
     if((mppt1.flags & 0x03)>0){mppt1.flags = (mppt1.flags & 0xFC) | ((mppt1.flags & 0x03) - 1);} // if disconnected for 3 seconds. Then FLAG disconnect.
     if((mppt2.flags & 0x03)>0){mppt2.flags = (mppt2.flags & 0xFC) | ((mppt2.flags & 0x03) - 1);} // if disconnected for 3 seconds. Then FLAG disconnect.
@@ -166,9 +166,9 @@ void SysTick_Handler (void)
 
     persistent_store(); // Store data in eeprom every second
 
-    if(clock.T_S >= 60){clock.T_S = 0;clock.T_M++;
-    if(clock.T_M >= 60){clock.T_M = 0;clock.T_H++;
-    if(clock.T_H >= 24){clock.T_H = 0;clock.T_D++;}}}
+    if(clock.t_s >= 60){clock.t_s = 0;clock.t_m++;
+    if(clock.t_m >= 60){clock.t_m = 0;clock.t_h++;
+    if(clock.t_h >= 24){clock.t_h = 0;clock.t_d++;}}}
   }
 }
 
@@ -1224,7 +1224,7 @@ void persistent_load (void)
  ******************************************************************************/
 void persistent_store (void)
 {
-  if(clock.T_S % 2)
+  if(clock.t_s % 2)
   {
     EE_write(ADD_ODO, conv_float_uint(stats.odometer));
     EE_write(ADD_ODOTR, conv_float_uint(stats.odometer_tr));
@@ -1255,11 +1255,11 @@ void nonpersistent_load(void)
   menu.submenu_items = 0;
   menu.driver = 255;
 
-  clock.T_D = 0;
-  clock.T_H = 0;
-  clock.T_M = 0;
-  clock.T_S = 0;
-  clock.T_mS = 0;
+  clock.t_d = 0;
+  clock.t_h = 0;
+  clock.t_m = 0;
+  clock.t_s = 0;
+  clock.t_ms = 0;
   clock.blink = 0;
 
   drive.current = 0;

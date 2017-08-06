@@ -325,11 +325,11 @@ struct DRIVE_STRUCT
 
 typedef struct CLOCK_STRUCT
 {
-	uint8_t T_mS;   // (mS / 10)
-	uint8_t T_S;
-	uint8_t T_M;
-	uint8_t T_H;
-	uint32_t T_D;
+	uint8_t t_ms;   // (mS / 10)
+	uint8_t t_s;
+	uint8_t t_m;
+	uint8_t t_h;
+	uint32_t t_d;
 	uint8_t blink;  // half second toggle bit
 } CLOCK;
 
