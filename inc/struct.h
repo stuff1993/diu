@@ -67,12 +67,6 @@ typedef struct MPPT_STRUCT
 #endif // _MPPT_PEAKS
 } MPPT;
 
-typedef struct MPPT_RELAY_STRUCT
-{
-	uint32_t data_a;
-	uint32_t data_b;
-} MPPT_RELAY;
-
 #if _MC_VECTORS
 typedef struct VECTORS_MTRCONT_STRUCT
 {

@@ -32,6 +32,14 @@
 // TODO: MAJOR - naming consistency
 // TODO: MAJOR - change I2C to handle multiple words in one write
 
+MPPT mppt1 =
+{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+MPPT mppt2 =
+{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+MOTORCONTROLLER esc =
+{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
 SHUNT shunt =
 { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -60,12 +68,6 @@ volatile unsigned char SWITCH_IO  = 0;
 uint16_t thr_pos = 0;
 uint16_t rgn_pos = 0;
 
-/// MPPTs
-MPPT mppt1;
-MPPT mppt2;
-
-/// Motor Controller
-MOTORCONTROLLER esc;
 
 /******************************************************************************
  ** Function name:  BOD_IRQHandler
@@ -114,24 +116,7 @@ void SysTick_Handler (void)
     stats.avg_power_counter++;
   }
 
-  if(clock.T_mS / 50)
-  {
-	  if(!clock.blink)
-	  {
-		  can_tx2_buf.MsgID = MPPT1_BASE;
-		  can2_send_message( &can_tx2_buf );
-	  }
-	  clock.blink = 1;
-  }
-  else
-  {
-	  if(clock.blink)
-	  {
-		  can_tx2_buf.MsgID = MPPT2_BASE;
-		  can2_send_message( &can_tx2_buf );
-	  }
-	  clock.blink = 0;
-  }
+  clock.blink = clock.t_ms / 50;
 
   if(stats.buz_tim)
   {
