@@ -507,13 +507,9 @@ void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
 	{
 		can_rx1_done = TRUE;
 		NEUTRAL_ON
-		;
 		REVERSE_ON
-		;
 		DRIVE_ON
-		;
 		REGEN_ON
-		;
 	}
 	break;
 	case ESC_BASE + 2:
@@ -554,7 +550,6 @@ void dash_data_extract(CAN_MSG *_msg)
 		break;
 	case DASH_RQST + 1:
 		SET_STATS_COMMS
-		;
 		break;
 	}
 }
