@@ -133,7 +133,6 @@ void      	main_paddles        (uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, 
 void      	main_lights         (void);
 void      	main_can_handler    (void);
 void      	main_calc           (void);
-void      	main_HV             (void);
 void      	esc_reset           (void);
 uint32_t  	EE_read             (uint16_t _EEadd);
 uint32_t  	EE_seq_read         (uint16_t _EEadd, int _len);

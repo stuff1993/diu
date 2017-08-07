@@ -553,9 +553,9 @@ void dash_data_extract(CAN_MSG *_msg)
 		can_rx1_done = TRUE;
 		break;
 	case DASH_RQST + 1:
-	SET_STATS_COMMS
-	;
-	break;
+		SET_STATS_COMMS
+		;
+		break;
 	}
 }
 
@@ -892,51 +892,38 @@ void main_lights(void)
 	if ((MECH_BRAKE || rgn_pos || esc.bus_i < 0) && !STATS_STROBE)
 	{
 		BRAKELIGHT_ON
-		;
 	}
 	else
 	{
 		BRAKELIGHT_OFF
-		;
 	}
 
 	if (REVERSE)
 	{
 		REVERSE_ON
-		;
 		NEUTRAL_OFF
-		;
 		DRIVE_OFF
-		;
 	}
 	else if (FORWARD)
 	{
 		REVERSE_OFF
-		;
 		NEUTRAL_OFF
-		;
 		DRIVE_ON
-		;
 	}
 	else
 	{
 		REVERSE_OFF
-		;
 		NEUTRAL_ON
-		;
 		DRIVE_OFF
-		;
 	}
 
 	if (rgn_pos)
 	{
 		REGEN_ON
-		;
 	}
 	else
 	{
 		REGEN_OFF
-		;
 	}
 
 	if (((SWITCH_IO & 0x8) || STATS_HAZARDS) && (clock.blink))
@@ -959,16 +946,12 @@ void main_lights(void)
 	if (STATS_DRV_MODE)
 	{
 		SPORTS_ON
-		;
 		ECO_OFF
-		;
 	}
 	else
 	{
 		SPORTS_OFF
-		;
 		ECO_ON
-		;
 	}
 
 	if (STATS_FAULT == 1)
