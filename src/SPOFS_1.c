@@ -337,7 +337,7 @@ void can1_unpack(CAN_MSG *_msg)
 	{
 		dash_data_extract(_msg);
 	}
-	else if (_msg->MsgID >= BMU_SHUNT && _msg->MsgID <= BMU_SHUNT + 2)
+	else if (_msg->MsgID >= BMU_SHUNT && _msg->MsgID <= BMU_SHUNT + 1)
 	{
 		shunt_data_extract(&shunt, _msg);
 	}
@@ -580,12 +580,17 @@ void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
 		_shunt->con_tim = 3;
 		break;
 	case BMU_SHUNT + 1:
-	_shunt->watt_hrs_out = conv_uint_float(_msg->DataA);
-	_shunt->watt_hrs_in = conv_uint_float(_msg->DataB);
-	break;
-	case BMU_SHUNT + 2:
-	_shunt->watt_hrs = conv_uint_float(_msg->DataA);
-	break;
+		_shunt->watt_hrs = conv_uint_float(_msg->DataA);
+		uint32_t _data_b = _msg->DataB;
+		if (_data_b & 0x1)
+		{
+			SET_STATS_ARMED
+		}
+		else
+		{
+			CLR_STATS_ARMED
+		}
+		break;
 	}
 }
 
@@ -977,6 +982,15 @@ void main_lights(void)
 	else
 	{
 		FAULT_OFF
+	}
+
+	if (STATS_ARMED)
+	{
+		HV_ON
+	}
+	else
+	{
+		HV_OFF
 	}
 }
 
