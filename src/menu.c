@@ -188,9 +188,7 @@ void menu_escBus (void)
   lcd_putstring(2,0, buffer);
   if(len<20){_lcd_padding(2, len, 20 - len);}
 
-  len = sprintf(buffer, "V Counter: %4d", stats.hv_counter);
-  lcd_putstring(3,0, buffer);
-  if(len<20){_lcd_padding(3, len, 20 - len);}
+  lcd_putstring(3,0, EROW);
 }
 
 /******************************************************************************

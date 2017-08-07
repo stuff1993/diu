@@ -136,6 +136,15 @@ void SysTick_Handler(void)
 		mppt1.avg_power += mppt1.watts;
 		mppt2.avg_power += mppt2.watts;
 		stats.avg_power_counter++;
+
+		// TODO: Test DLC and where data needs to go for 1 byte transmission
+		// Light control message
+		can_tx1_buf.Frame = 0x00010000;
+		can_tx1_buf.MsgID = DASH_RPLY;
+		// can_tx1_buf.DataA = STATS_LEFT | (STATS_RIGHT << 1) | (STATS_BRAKE << 2);
+		can_tx1_buf.DataA = (stats.flags & 0x0700) >> 8;
+		can_tx1_buf.DataB = 0x0;
+		can1_send_message(&can_tx1_buf);
 	}
 
 	if (stats.buz_tim)
@@ -641,6 +650,24 @@ void main_input_check(void)
 	// BEEP if toggle position has changed.
 	if(OLD_IO != SWITCH_IO){buzzer(50);}
 
+	if (SWITCH_IO & 0x8)
+	{
+		SET_STATS_LEFT
+	}
+	else
+	{
+		CLR_STATS_LEFT
+	}
+	if (SWITCH_IO & 0x10)
+	{
+		SET_STATS_RIGHT
+	}
+	else
+	{
+		CLR_STATS_RIGHT
+	}
+
+
 	if((btn_ret = btn_release_left_right()))
 	{
 		buzzer(2);
@@ -654,27 +681,39 @@ void main_input_check(void)
 		if((esc.error & 0x1) && !STATS_HWOC_ACK){SET_STATS_HWOC_ACK;BUZZER_OFF}
 		if(STATS_COMMS == 1)  // send NO RESPONSE packet
 		{
-			if((LPC_CAN1->GSR & (1 << 3)))  // Check Global Status Reg
+			if((LPC_CAN1->GSR & (1 << 3)))  // Check Global Status Register
 			{
-				can_tx1_buf.Frame = 0x00010000;  // 11-bit, no RTR, DLC is 1 byte
+				can_tx1_buf.Frame = 0x00010000; // 11-bit, no RTR, DLC is 1 byte
 				can_tx1_buf.MsgID = DASH_RPLY + 1;
 				can_tx1_buf.DataA = 0x0;
 				can_tx1_buf.DataB = 0x0;
-				can1_send_message( &can_tx1_buf );
+				can1_send_message(&can_tx1_buf);
 			}
-			CLR_STATS_COMMS;
+			CLR_STATS_COMMS
 		}
 
 		lcd_clear();
 		inputs.input_dwn = 0;
 		menu.submenu_pos = 0;
-		CLR_MENU_SELECTED;
+		CLR_MENU_SELECTED
 	}
 
-	if(SWITCH_IO & 0x4) {SET_STATS_DRV_MODE;stats.ramp_speed = SPORTS_RAMP_SPEED;}
-	else                {CLR_STATS_DRV_MODE;stats.ramp_speed = ECONOMY_RAMP_SPEED;}
+	if(SWITCH_IO & 0x4){SET_STATS_DRV_MODE;stats.ramp_speed = SPORTS_RAMP_SPEED;}
+	else               {CLR_STATS_DRV_MODE;stats.ramp_speed = ECONOMY_RAMP_SPEED;}
 
-	if(swt_cruise() & 0x0C){TOG_STATS_HAZARDS;}
+	if (swt_cruise() & 0x0C)
+	{
+		TOG_STATS_HAZARDS
+	}
+
+	if ((MECH_BRAKE || rgn_pos || esc.bus_i < 0))
+	{
+		SET_STATS_BRAKE
+	}
+	else
+	{
+		CLR_STATS_BRAKE
+	}
 }
 
 /******************************************************************************
@@ -864,7 +903,7 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 /******************************************************************************
  ** Function:    main_lights
  **
- ** Description: Controls status of lights and LEDs
+ ** Description: Controls status of on board LEDs
  **
  ** Parameters:  None
  ** Return:      None
@@ -872,15 +911,6 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
  ******************************************************************************/
 void main_lights(void)
 {
-	if ((MECH_BRAKE || rgn_pos || esc.bus_i < 0) && !STATS_STROBE)
-	{
-		BRAKELIGHT_ON
-	}
-	else
-	{
-		BRAKELIGHT_OFF
-	}
-
 	if (REVERSE)
 	{
 		REVERSE_ON
@@ -909,7 +939,7 @@ void main_lights(void)
 		REGEN_OFF
 	}
 
-	if (((SWITCH_IO & 0x8) || STATS_HAZARDS) && (clock.blink))
+	if ((STATS_LEFT || STATS_HAZARDS) && (clock.blink))
 	{
 		BLINKER_L_ON
 	}
@@ -917,7 +947,7 @@ void main_lights(void)
 	{
 		BLINKER_L_OFF
 	}
-	if (((SWITCH_IO & 0x10) || STATS_HAZARDS) && (clock.blink))
+	if ((STATS_RIGHT || STATS_HAZARDS) && (clock.blink))
 	{
 		BLINKER_R_ON
 	}
