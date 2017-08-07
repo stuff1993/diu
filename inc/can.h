@@ -202,8 +202,4 @@ void CAN_SetACCF(uint32_t ACCFMode);
 uint32_t can1_send_message(CAN_MSG* pTXBuf);
 uint32_t can2_send_message(CAN_MSG* pTXBuf);
 
-/// Must implement
-void can1_unpack(CAN_MSG *_msg);
-void can2_unpack(CAN_MSG *_msg);
-
 #endif	// __CAN_H
