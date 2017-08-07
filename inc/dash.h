@@ -50,14 +50,11 @@
 #define HV_ON           LPC_GPIO1->FIOSET |= (1<<8);
 #define HV_OFF          LPC_GPIO1->FIOCLR |= (1<<8);
 
-#define BLINKER_R_ON    LPC_GPIO1->FIOSET |= (1<<19);LPC_GPIO3->FIOSET |= (1<<26);
-#define BLINKER_R_OFF   LPC_GPIO1->FIOCLR |= (1<<19);LPC_GPIO3->FIOCLR |= (1<<26);
+#define BLINKER_R_ON    LPC_GPIO3->FIOSET |= (1<<26);
+#define BLINKER_R_OFF   LPC_GPIO3->FIOCLR |= (1<<26);
 
-#define BLINKER_L_ON    LPC_GPIO1->FIOSET |= (1<<20);LPC_GPIO3->FIOSET |= (1<<25);
-#define BLINKER_L_OFF   LPC_GPIO1->FIOCLR |= (1<<20);LPC_GPIO3->FIOCLR |= (1<<25);
-
-#define BRAKELIGHT_ON   LPC_GPIO1->FIOSET |= (1<<21);
-#define BRAKELIGHT_OFF  LPC_GPIO1->FIOCLR |= (1<<21);
+#define BLINKER_L_ON    LPC_GPIO3->FIOSET |= (1<<25);
+#define BLINKER_L_OFF   LPC_GPIO3->FIOCLR |= (1<<25);
 
 #define REVERSE_ON      LPC_GPIO1->FIOSET |= (1<<26);
 #define REVERSE_OFF     LPC_GPIO1->FIOCLR |= (1<<26);
