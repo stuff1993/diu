@@ -85,21 +85,13 @@ uint16_t rgn_pos = 0;
 void BOD_IRQHandler(void)
 {
 	HV_OFF
-	;
 	REVERSE_ON
-	;
 	NEUTRAL_ON
-	;
 	REGEN_ON
-	;
 	DRIVE_ON
-	;
 	FAULT_ON
-	;
 	ECO_ON
-	;
 	SPORTS_ON
-	;
 }
 
 /******************************************************************************
@@ -151,19 +143,16 @@ void SysTick_Handler(void)
 		if (!(--stats.buz_tim))
 		{
 			BUZZER_OFF
-			;
 		}
 	}
 
 	if (!stats.strobe_tim)
 	{
 		TOG_STATS_STROBE
-		;
 	}
 	else
 	{
 		CLR_STATS_STROBE
-		;
 	}
 
 	// Time sensitive Calculations
@@ -502,33 +491,33 @@ void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
 	switch (_msg->MsgID)
 	{
 	case ESC_BASE + 1:
-	_esc->error = (_msg->DataA >> 16);
-	if (_esc->error == 0x2)
-	{
-		can_rx1_done = TRUE;
-		NEUTRAL_ON
-		REVERSE_ON
-		DRIVE_ON
-		REGEN_ON
-	}
-	break;
+		_esc->error = (_msg->DataA >> 16);
+		if (_esc->error == 0x2)
+		{
+			can_rx1_done = TRUE;
+			NEUTRAL_ON
+			REVERSE_ON
+			DRIVE_ON
+			REGEN_ON
+		}
+		break;
 	case ESC_BASE + 2:
-	_esc->bus_v = iir_filter_float(_esc->bus_v, conv_uint_float(_msg->DataA), IIR_GAIN_ELECTRICAL);
-	_esc->bus_i = iir_filter_float(_esc->bus_i, conv_uint_float(_msg->DataB), IIR_GAIN_ELECTRICAL);
-	break;
+		_esc->bus_v = iir_filter_float(_esc->bus_v, conv_uint_float(_msg->DataA), IIR_GAIN_ELECTRICAL);
+		_esc->bus_i = iir_filter_float(_esc->bus_i, conv_uint_float(_msg->DataB), IIR_GAIN_ELECTRICAL);
+		break;
 	case ESC_BASE + 3:
-	_esc->velocity_kmh = conv_uint_float(_msg->DataB) * 3.6;
-	break;
+		_esc->velocity_kmh = conv_uint_float(_msg->DataB) * 3.6;
+		break;
 	case ESC_BASE + 11:
-	_esc->heatsink_tmp = conv_uint_float(_msg->DataB);
-	_esc->motor_tmp = conv_uint_float(_msg->DataA);
-	break;
+		_esc->heatsink_tmp = conv_uint_float(_msg->DataB);
+		_esc->motor_tmp = conv_uint_float(_msg->DataA);
+		break;
 	case ESC_BASE + 12:
-	_esc->board_tmp = conv_uint_float(_msg->DataA);
-	break;
+		_esc->board_tmp = conv_uint_float(_msg->DataA);
+		break;
 	case ESC_BASE + 14:
-	_esc->odometer = conv_uint_float(_msg->DataA);
-	break;
+		_esc->odometer = conv_uint_float(_msg->DataA);
+		break;
 	}
 }
 
@@ -604,26 +593,27 @@ void bmu_data_extract(BMU *_bmu, CAN_MSG *_msg)
 	switch (_msg->MsgID)
 	{
 	case BMU_BASE + BMU_INFO + 4:
-	_bmu->min_cell_v = _msg->DataA & 0xFFFF;
-	_bmu->max_cell_v = (_msg->DataA >> 16) & 0xFFFF;
-	_bmu->cmu_min_v = _msg->DataB & 0xFF;
-	_bmu->cmu_max_v = (_msg->DataB >> 16) & 0xFF;
-	_bmu->cell_min_v = (_msg->DataB >> 8) & 0xFF;
-	_bmu->cell_max_v = (_msg->DataB >> 24) & 0xFF;
-	break;
+		_bmu->min_cell_v = _msg->DataA & 0xFFFF;
+		_bmu->max_cell_v = (_msg->DataA >> 16) & 0xFFFF;
+		_bmu->cmu_min_v = _msg->DataB & 0xFF;
+		_bmu->cmu_max_v = (_msg->DataB >> 16) & 0xFF;
+		_bmu->cell_min_v = (_msg->DataB >> 8) & 0xFF;
+		_bmu->cell_max_v = (_msg->DataB >> 24) & 0xFF;
+		break;
 	case BMU_BASE + BMU_INFO + 5:
-	_bmu->max_cell_tmp = _msg->DataA & 0xFFFF;
-	_bmu->max_cell_tmp = (_msg->DataA >> 16) & 0xFFFF;
-	_bmu->cmu_min_tmp = _msg->DataB & 0xFF;
-	_bmu->cmu_max_tmp = (_msg->DataB >> 16) & 0xFF;
-	break;
+		_bmu->max_cell_tmp = _msg->DataA & 0xFFFF;
+		_bmu->max_cell_tmp = (_msg->DataA >> 16) & 0xFFFF;
+		_bmu->cmu_min_tmp = _msg->DataB & 0xFF;
+		_bmu->cmu_max_tmp = (_msg->DataB >> 16) & 0xFF;
+		break;
 	case BMU_BASE + BMU_INFO + 6:
-	_bmu->bus_v = iir_filter_uint(_msg->DataA / 1000, _bmu->bus_v, IIR_GAIN_ELECTRICAL); // Packet is in mV and mA
-	_bmu->bus_i = iir_filter_int(_msg->DataB / 1000, _bmu->bus_i, IIR_GAIN_ELECTRICAL);
-	break;
+		// Packet is in mV and mA
+		_bmu->bus_v = iir_filter_uint(_msg->DataA / 1000, _bmu->bus_v, IIR_GAIN_ELECTRICAL);
+		_bmu->bus_i = iir_filter_int(_msg->DataB / 1000, _bmu->bus_i, IIR_GAIN_ELECTRICAL);
+		break;
 	case BMU_BASE + BMU_INFO + 9:
-	_bmu->status = _msg->DataA & 0x7; // Only Voltage and Temperature flags relevant
-	break;
+		_bmu->status = _msg->DataA & 0x7; // Only Voltage and Temperature flags relevant
+		break;
 	}
 }
 
@@ -704,12 +694,10 @@ int main_fault_check(void)
 	if (mppt1.i_in == 0 || mppt2.i_in == 0)
 	{
 		SET_STATS_NO_ARR_HV
-		;
 	}
 	else
 	{
 		CLR_STATS_NO_ARR_HV
-		;
 	}
 	if (esc.error)
 	{
@@ -1530,17 +1518,14 @@ int main(void)
 			if (STATS_SWOC_ACK && !(esc.error & 0x2)) // if acknowledged previous error is reset
 			{
 				CLR_STATS_SWOC_ACK
-				;
 			}
 			if (STATS_HWOC_ACK && !(esc.error & 0x1)) // if acknowledged previous error is reset
 			{
 				CLR_STATS_HWOC_ACK
-				;
 			}
 			if (STATS_BMU_ACK && !(bmu.status))
 			{
 				CLR_STATS_BMU_ACK
-				;
 			}
 
 			menu.counter++;
