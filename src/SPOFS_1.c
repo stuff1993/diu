@@ -337,7 +337,7 @@ void can1_unpack(CAN_MSG *_msg)
 	{
 		dash_data_extract(_msg);
 	}
-	else if (_msg->MsgID >= BMU_SHUNT && _msg->MsgID <= BMU_SHUNT + 2)
+	else if (_msg->MsgID >= BMU_SHUNT && _msg->MsgID <= BMU_SHUNT + 1)
 	{
 		shunt_data_extract(&shunt, _msg);
 	}
@@ -507,13 +507,9 @@ void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
 	{
 		can_rx1_done = TRUE;
 		NEUTRAL_ON
-		;
 		REVERSE_ON
-		;
 		DRIVE_ON
-		;
 		REGEN_ON
-		;
 	}
 	break;
 	case ESC_BASE + 2:
@@ -553,9 +549,8 @@ void dash_data_extract(CAN_MSG *_msg)
 		can_rx1_done = TRUE;
 		break;
 	case DASH_RQST + 1:
-	SET_STATS_COMMS
-	;
-	break;
+		SET_STATS_COMMS
+		break;
 	}
 }
 
@@ -580,12 +575,17 @@ void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
 		_shunt->con_tim = 3;
 		break;
 	case BMU_SHUNT + 1:
-	_shunt->watt_hrs_out = conv_uint_float(_msg->DataA);
-	_shunt->watt_hrs_in = conv_uint_float(_msg->DataB);
-	break;
-	case BMU_SHUNT + 2:
-	_shunt->watt_hrs = conv_uint_float(_msg->DataA);
-	break;
+		_shunt->watt_hrs = conv_uint_float(_msg->DataA);
+		uint32_t _data_b = _msg->DataB;
+		if (_data_b & 0x1)
+		{
+			SET_STATS_ARMED
+		}
+		else
+		{
+			CLR_STATS_ARMED
+		}
+		break;
 	}
 }
 
@@ -887,51 +887,38 @@ void main_lights(void)
 	if ((MECH_BRAKE || rgn_pos || esc.bus_i < 0) && !STATS_STROBE)
 	{
 		BRAKELIGHT_ON
-		;
 	}
 	else
 	{
 		BRAKELIGHT_OFF
-		;
 	}
 
 	if (REVERSE)
 	{
 		REVERSE_ON
-		;
 		NEUTRAL_OFF
-		;
 		DRIVE_OFF
-		;
 	}
 	else if (FORWARD)
 	{
 		REVERSE_OFF
-		;
 		NEUTRAL_OFF
-		;
 		DRIVE_ON
-		;
 	}
 	else
 	{
 		REVERSE_OFF
-		;
 		NEUTRAL_ON
-		;
 		DRIVE_OFF
-		;
 	}
 
 	if (rgn_pos)
 	{
 		REGEN_ON
-		;
 	}
 	else
 	{
 		REGEN_OFF
-		;
 	}
 
 	if (((SWITCH_IO & 0x8) || STATS_HAZARDS) && (clock.blink))
@@ -954,16 +941,12 @@ void main_lights(void)
 	if (STATS_DRV_MODE)
 	{
 		SPORTS_ON
-		;
 		ECO_OFF
-		;
 	}
 	else
 	{
 		SPORTS_OFF
-		;
 		ECO_ON
-		;
 	}
 
 	if (STATS_FAULT == 1)
@@ -977,6 +960,15 @@ void main_lights(void)
 	else
 	{
 		FAULT_OFF
+	}
+
+	if (STATS_ARMED)
+	{
+		HV_ON
+	}
+	else
+	{
+		HV_OFF
 	}
 }
 
