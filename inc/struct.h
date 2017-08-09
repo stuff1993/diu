@@ -168,9 +168,9 @@ typedef struct BMU_STRUCT
 	float bal_soc_per;
 #endif // _BMU_BAL_SOC
 #if _BMU_THRES
-	int16_t charge_cell_v_err;    //
-	int16_t cell_tmp_margin;//
-	int16_t discharge_cell_v_err;//
+	int16_t charge_cell_v_err;
+	int16_t cell_tmp_margin;
+	int16_t discharge_cell_v_err;
 #endif // _BMU_THRES
 #if _BMU_CAP
 	uint16_t pack_capacity;
@@ -242,7 +242,6 @@ struct STATS_STRUCT
 	float max_speed;          // kmh
 	float cruise_speed;       // kmh
 	uint8_t buz_tim;          // 10mS ticks to sound buzzer
-	uint8_t strobe_tim;
 	uint8_t paddle_mode;
 	uint32_t avg_power_counter;
 	volatile uint16_t flags;
@@ -256,16 +255,16 @@ struct STATS_STRUCT
 #define STATS_CR_ACT		((stats.flags & 0x0008) >> 3)
 #define STATS_CR_STS		((stats.flags & 0x0010) >> 4)
 #define STATS_HAZARDS		((stats.flags & 0x0020) >> 5)
-#define STATS_STROBE		((stats.flags & 0x0040) >> 6)
-#define STATS_LEFT			((stats.flags & 0x0080) >> 7)
-#define STATS_RIGHT			((stats.flags & 0x0100) >> 8)
-#define STATS_BRAKE			((stats.flags & 0x0200) >> 9)
-#define STATS_UNUSED1		((stats.flags & 0x0400) >> 10)
-#define STATS_UNUSED2		((stats.flags & 0x0800) >> 11)
-#define STATS_UNUSED3		((stats.flags & 0x1000) >> 12)
-#define STATS_UNUSED4		((stats.flags & 0x2000) >> 13)
-#define STATS_UNUSED5		((stats.flags & 0x4000) >> 14)
-#define STATS_UNUSED6		((stats.flags & 0x8000) >> 15)
+#define STATS_LEFT			((stats.flags & 0x0040) >> 6)
+#define STATS_RIGHT			((stats.flags & 0x0080) >> 7)
+#define STATS_BRAKE			((stats.flags & 0x0100) >> 8)
+#define STATS_UNUSED1		((stats.flags & 0x0200) >> 9)
+#define STATS_UNUSED2		((stats.flags & 0x0400) >> 10)
+#define STATS_UNUSED3		((stats.flags & 0x0800) >> 11)
+#define STATS_UNUSED4		((stats.flags & 0x1000) >> 12)
+#define STATS_UNUSED5		((stats.flags & 0x2000) >> 13)
+#define STATS_UNUSED6		((stats.flags & 0x4000) >> 14)
+#define STATS_UNUSED7		((stats.flags & 0x8000) >> 15)
 
 #define SET_STATS_DRV_MODE	stats.flags |= 0x0001;	// Sports Flagged
 #define SET_STATS_BUZZER	stats.flags |= 0x0002;
@@ -273,16 +272,16 @@ struct STATS_STRUCT
 #define SET_STATS_CR_ACT	stats.flags |= 0x0008;
 #define SET_STATS_CR_STS	stats.flags |= 0x0010;
 #define SET_STATS_HAZARDS	stats.flags |= 0x0020;
-#define SET_STATS_STROBE	stats.flags |= 0x0040;
-#define SET_STATS_LEFT		stats.flags |= 0x0080;
-#define SET_STATS_RIGHT		stats.flags |= 0x0100;
-#define SET_STATS_BRAKE		stats.flags |= 0x0200;
-#define SET_STATS_UNUSED1	stats.flags |= 0x0400;
-#define SET_STATS_UNUSED2	stats.flags |= 0x0800;
-#define SET_STATS_UNUSED3	stats.flags |= 0x1000;
-#define SET_STATS_UNUSED4	stats.flags |= 0x2000;
-#define SET_STATS_UNUSED5	stats.flags |= 0x4000;
-#define SET_STATS_UNUSED6	stats.flags |= 0x8000;
+#define SET_STATS_LEFT		stats.flags |= 0x0040;
+#define SET_STATS_RIGHT		stats.flags |= 0x0080;
+#define SET_STATS_BRAKE		stats.flags |= 0x0100;
+#define SET_STATS_UNUSED1	stats.flags |= 0x0200;
+#define SET_STATS_UNUSED2	stats.flags |= 0x0400;
+#define SET_STATS_UNUSED3	stats.flags |= 0x0800;
+#define SET_STATS_UNUSED4	stats.flags |= 0x1000;
+#define SET_STATS_UNUSED5	stats.flags |= 0x2000;
+#define SET_STATS_UNUSED6	stats.flags |= 0x4000;
+#define SET_STATS_UNUSED7	stats.flags |= 0x8000;
 
 #define CLR_STATS_DRV_MODE	stats.flags &= 0xFFFE;	// Economy Flagged
 #define CLR_STATS_BUZZER	stats.flags &= 0xFFFD;
@@ -290,16 +289,16 @@ struct STATS_STRUCT
 #define CLR_STATS_CR_ACT	stats.flags &= 0xFFF7;
 #define CLR_STATS_CR_STS	stats.flags &= 0xFFEF;
 #define CLR_STATS_HAZARDS	stats.flags &= 0xFFDF;
-#define CLR_STATS_STROBE	stats.flags &= 0xFFBF;
-#define CLR_STATS_LEFT		stats.flags &= 0xFF7F;
-#define CLR_STATS_RIGHT		stats.flags &= 0xFEFF;
-#define CLR_STATS_BRAKE		stats.flags &= 0xFDFF;
-#define CLR_STATS_UNUSED1	stats.flags &= 0xFBFF;
-#define CLR_STATS_UNUSED2	stats.flags &= 0xF7FF;
-#define CLR_STATS_UNUSED3	stats.flags &= 0xEFFF;
-#define CLR_STATS_UNUSED4	stats.flags &= 0xDFFF;
-#define CLR_STATS_UNUSED5	stats.flags &= 0xBFFF;
-#define CLR_STATS_UNUSED6	stats.flags &= 0x7FFF;
+#define CLR_STATS_LEFT		stats.flags &= 0xFFBF;
+#define CLR_STATS_RIGHT		stats.flags &= 0xFF7F;
+#define CLR_STATS_BRAKE		stats.flags &= 0xFEFF;
+#define CLR_STATS_UNUSED1	stats.flags &= 0xFDFF;
+#define CLR_STATS_UNUSED2	stats.flags &= 0xFBFF;
+#define CLR_STATS_UNUSED3	stats.flags &= 0xF7FF;
+#define CLR_STATS_UNUSED4	stats.flags &= 0xEFFF;
+#define CLR_STATS_UNUSED5	stats.flags &= 0xDFFF;
+#define CLR_STATS_UNUSED6	stats.flags &= 0xBFFF;
+#define CLR_STATS_UNUSED7	stats.flags &= 0x7FFF;
 
 #define TOG_STATS_DRV_MODE	stats.flags ^= 0x0001;
 #define TOG_STATS_BUZZER	stats.flags ^= 0x0002;
@@ -307,16 +306,16 @@ struct STATS_STRUCT
 #define TOG_STATS_CR_ACT	stats.flags ^= 0x0008;
 #define TOG_STATS_CR_STS	stats.flags ^= 0x0010;
 #define TOG_STATS_HAZARDS	stats.flags ^= 0x0020;
-#define TOG_STATS_STROBE	stats.flags ^= 0x0040;
-#define TOG_STATS_LEFT		stats.flags ^= 0x0080;
-#define TOG_STATS_RIGHT		stats.flags ^= 0x0100;
-#define TOG_STATS_BRAKE		stats.flags ^= 0x0200;
-#define TOG_STATS_UNUSED1	stats.flags ^= 0x0400;
-#define TOG_STATS_UNUSED2	stats.flags ^= 0x0800;
-#define TOG_STATS_UNUSED3	stats.flags ^= 0x1000;
-#define TOG_STATS_UNUSED4	stats.flags ^= 0x2000;
-#define TOG_STATS_UNUSED5	stats.flags ^= 0x4000;
-#define TOG_STATS_UNUSED6	stats.flags ^= 0x8000;
+#define TOG_STATS_LEFT		stats.flags ^= 0x0040;
+#define TOG_STATS_RIGHT		stats.flags ^= 0x0080;
+#define TOG_STATS_BRAKE		stats.flags ^= 0x0100;
+#define TOG_STATS_UNUSED1	stats.flags ^= 0x0200;
+#define TOG_STATS_UNUSED2	stats.flags ^= 0x0400;
+#define TOG_STATS_UNUSED3	stats.flags ^= 0x0800;
+#define TOG_STATS_UNUSED4	stats.flags ^= 0x1000;
+#define TOG_STATS_UNUSED5	stats.flags ^= 0x2000;
+#define TOG_STATS_UNUSED6	stats.flags ^= 0x4000;
+#define TOG_STATS_UNUSED7	stats.flags ^= 0x8000;
 
 /// stats.errors
 #define STATS_SWOC_ACK       ((stats.errors & 0x01) >> 0)

@@ -29,9 +29,6 @@
 #include "can.h"
 #include "menu.h"
 
-// TODO: MAJOR - naming consistency
-// TODO: MAJOR - change I2C to handle multiple words in one write
-
 MPPT mppt1 =
 { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 MPPT mppt2 =
@@ -55,7 +52,6 @@ CAN_MSG can_tx2_buf =
 { 0, 0, 0, 0 };
 
 extern CAN_MSG can_rx1_buf;
-extern CAN_MSG can_rx2_buf;
 
 volatile uint32_t can_rx1_done = FALSE, can_rx2_done = FALSE;
 
@@ -64,7 +60,7 @@ extern volatile uint8_t I2CMasterBuffer[I2C_PORT_NUM][BUFSIZE];
 extern volatile uint32_t I2CWriteLength[I2C_PORT_NUM];
 extern volatile uint32_t I2CReadLength[I2C_PORT_NUM];
 extern volatile uint8_t I2CSlaveBuffer[I2C_PORT_NUM][BUFSIZE];
-extern volatile uint32_t I2CMasterState[I2C_PORT_NUM]; // TODO: For Timeout test
+extern volatile uint32_t I2CMasterState[I2C_PORT_NUM]; // TODO: For Timeout test - 2015
 ///////////////////////////////////////////////////////////////////////
 
 volatile unsigned char SWITCH_IO  = 0;
@@ -125,6 +121,7 @@ void SysTick_Handler(void)
 		}
 		can1_send_message(&can_tx1_buf);
 
+		// TODO: This may only need to be sent once - investigate
 		can_tx1_buf.Frame = 0x00080000;
 		can_tx1_buf.MsgID = ESC_CONTROL + 2;
 		can_tx1_buf.DataA = 0x0;
@@ -139,10 +136,10 @@ void SysTick_Handler(void)
 
 		// TODO: Test DLC and where data needs to go for 1 byte transmission
 		// Light control message
+		// If hazards, set both left and right
 		can_tx1_buf.Frame = 0x00010000;
 		can_tx1_buf.MsgID = DASH_RPLY;
-		// can_tx1_buf.DataA = STATS_LEFT | (STATS_RIGHT << 1) | (STATS_BRAKE << 2);
-		can_tx1_buf.DataA = (stats.flags & 0x0700) >> 8;
+		can_tx1_buf.DataA = STATS_LEFT | (STATS_RIGHT << 1) | (STATS_BRAKE << 2) | STATS_HAZARDS | (STATS_HAZARDS << 1);
 		can_tx1_buf.DataB = 0x0;
 		can1_send_message(&can_tx1_buf);
 	}
@@ -153,15 +150,6 @@ void SysTick_Handler(void)
 		{
 			BUZZER_OFF
 		}
-	}
-
-	if (!stats.strobe_tim)
-	{
-		TOG_STATS_STROBE
-	}
-	else
-	{
-		CLR_STATS_STROBE
 	}
 
 	// Time sensitive Calculations
@@ -202,17 +190,6 @@ void SysTick_Handler(void)
 		if (shunt.con_tim > 0)
 		{
 			shunt.con_tim--;
-		}
-		if (MECH_BRAKE || rgn_pos)
-		{
-			if (stats.strobe_tim > 0)
-			{
-				stats.strobe_tim--;
-			}
-		}
-		else
-		{
-			stats.strobe_tim = 30;
 		}
 
 		can_tx1_buf.Frame = 0x00080000;
@@ -930,7 +907,7 @@ void main_lights(void)
 		DRIVE_OFF
 	}
 
-	if (rgn_pos)
+	if (rgn_pos || esc.bus_i < 0)
 	{
 		REGEN_ON
 	}
@@ -967,7 +944,8 @@ void main_lights(void)
 		ECO_ON
 	}
 
-	if (STATS_FAULT == 1)
+	// TODO: Remove MECH_BRAKE after testing to confirm brake lights. Or leave if worth keeping for driver
+	if (STATS_FAULT == 1 || MECH_BRAKE)
 	{
 		FAULT_ON
 	}
@@ -1082,7 +1060,7 @@ void main_calc(void)
 
 	bmu.watts = bmu.bus_i * bmu.bus_v;
 
-	mppt1.watts = (mppt1.v_in * mppt1.i_in) / 1000.0; // TODO: adjust for efficiency?
+	mppt1.watts = (mppt1.v_in * mppt1.i_in) / 1000.0;
 	mppt2.watts = (mppt2.v_in * mppt2.i_in) / 1000.0;
 
 	// Check peaks
@@ -1123,7 +1101,7 @@ void esc_reset(void)
 {
 	// RESET MOTOR CONTROLLER(S)
 	// see WS22 user manual and Tritium CAN network specs
-	// TODO: try MC + 25 (0x19) + msg "RESETWS" (TRI88.004 ver3 doc, July 2013)
+	// TODO: try MC + 25 (0x19) + msg "RESETWS" (TRI88.004 ver3 doc, July 2013) - 2015
 	CAN_MSG reset_msg = { 0x00080000, ESC_CONTROL + 3, 0x0, 0x0 };
 	can1_send_message(&reset_msg);
 }
@@ -1219,7 +1197,7 @@ uint32_t I2C_read(uint16_t _EEadd)
 	I2CEngine( PORT_USED);
 	I2CStop(PORT_USED);
 
-	// TODO: Test I2C timeouts
+	// TODO: Test I2C timeouts - 2015
 	// if(I2CMasterState[PORT_USED] == I2C_TIME_OUT){SET_STATS_SWOC_ACK;}
 
 	return (uint32_t) I2CSlaveBuffer[PORT_USED][0];
@@ -1276,7 +1254,7 @@ void I2C_write(uint16_t _EEadd, uint8_t data0, uint8_t data1, uint8_t data2, uin
 	I2CMasterBuffer[PORT_USED][6] = data3;
 	I2CEngine( PORT_USED);
 
-	// TODO: Test I2C timeouts
+	// TODO: Test I2C timeouts - 2015
 	// if(I2CMasterState[PORT_USED] == I2C_TIME_OUT){SET_STATS_HWOC_ACK;}
 
 	delayMs(1, 2);
@@ -1352,7 +1330,6 @@ void nonpersistent_load(void)
 	stats.max_speed = 0;
 	stats.cruise_speed = 0;
 	stats.ramp_speed = 5;
-	stats.strobe_tim = 30;
 	stats.paddle_mode = 1;
 }
 
