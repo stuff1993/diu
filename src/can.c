@@ -8,9 +8,6 @@
 #include "lpc17xx.h"
 #include "type.h"
 #include "can.h"
-#include "dash.h"
-#include "struct.h"
-#include "inttofloat.h"
 
 CAN_MSG can_rx1_buf;
 CAN_MSG can_rx2_buf;
