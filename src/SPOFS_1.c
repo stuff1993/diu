@@ -1188,9 +1188,6 @@ uint32_t I2C_read(uint16_t _EEadd)
 	I2CEngine( PORT_USED);
 	I2CStop(PORT_USED);
 
-	// TODO: Test I2C timeouts - 2015
-	// if(I2CMasterState[PORT_USED] == I2C_TIME_OUT){SET_STATS_SWOC_ACK;}
-
 	return (uint32_t) I2CSlaveBuffer[PORT_USED][0];
 }
 
@@ -1245,14 +1242,11 @@ void I2C_write(uint16_t _EEadd, uint8_t data0, uint8_t data1, uint8_t data2, uin
 	I2CMasterBuffer[PORT_USED][6] = data3;
 	I2CEngine( PORT_USED);
 
-	// TODO: Test I2C timeouts - 2015
-	// if(I2CMasterState[PORT_USED] == I2C_TIME_OUT){SET_STATS_HWOC_ACK;}
-
 	delayMs(1, 2);
 }
 
 /******************************************************************************
- ** Function:    load_persistent
+ ** Function:    persistent_load
  **
  ** Description: Restores persistent variables from EEPROM
  **
@@ -1272,7 +1266,7 @@ void persistent_load(void)
 }
 
 /******************************************************************************
- ** Function:    store_persistent
+ ** Function:    persistent_store
  **
  ** Description: Saves persistent variables to EEPROM
  **
@@ -1296,7 +1290,7 @@ void persistent_store(void)
 }
 
 /******************************************************************************
- ** Function:    load_nonpersistent
+ ** Function:    nonpersistent_load
  **
  ** Description: Loads non-persistent default values
  **
@@ -1325,7 +1319,7 @@ void nonpersistent_load(void)
 }
 
 /******************************************************************************
- ** Function:    init_GPIO
+ ** Function:    gpio_init
  **
  ** Description: Configures pins to be used for GPIO
  **
