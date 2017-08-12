@@ -14,7 +14,6 @@
 
 CAN_MSG can_rx1_buf;
 CAN_MSG can_rx2_buf;
-extern volatile uint8_t can_rx1_done;
 
 volatile uint32_t CANStatus;
 #if CAN_RX_COUNTERS
@@ -155,7 +154,6 @@ void CAN_IRQHandler(void)
  ******************************************************************************/
 void CANActivity_IRQHandler (void)
 {
-	can_rx2_done = TRUE;
 	CANActivityInterruptFlag = 1;
 
 	LPC_SC->CANSLEEPCLR = (0x1<<1)|(0x1<<2);
@@ -176,8 +174,6 @@ void CANActivity_IRQHandler (void)
  ******************************************************************************/
 uint32_t can1_init(uint32_t can_btr)
 {
-	can_rx1_done = FALSE;
-
 	LPC_SC->PCONP |= (1 << 13); /* Enable CAN1 clock */
 
 	LPC_PINCON->PINSEL1 |= (1 << 13) | (1 << 12) | (1 << 11) | (1 << 10);

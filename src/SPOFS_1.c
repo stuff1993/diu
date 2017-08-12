@@ -53,8 +53,6 @@ CAN_MSG can_tx2_buf =
 
 extern CAN_MSG can_rx1_buf;
 
-volatile uint32_t can_rx1_done = FALSE, can_rx2_done = FALSE;
-
 /////////////////////////////   I2C    ////////////////////////////////
 extern volatile uint8_t I2CMasterBuffer[I2C_PORT_NUM][BUFSIZE];
 extern volatile uint32_t I2CWriteLength[I2C_PORT_NUM];
@@ -479,7 +477,6 @@ void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
 		_esc->error = (_msg->DataA >> 16);
 		if (_esc->error == 0x2)
 		{
-			can_rx1_done = TRUE;
 			NEUTRAL_ON
 			REVERSE_ON
 			DRIVE_ON
@@ -1031,7 +1028,10 @@ void main_can_handler(void)
 	{
 		esc_reset();
 		buzzer(50);
-		NEUTRAL_OFF;REVERSE_OFF;DRIVE_OFF;REGEN_OFF;
+		NEUTRAL_OFF
+		REVERSE_OFF
+		DRIVE_OFF
+		REGEN_OFF
 	}
 }
 
