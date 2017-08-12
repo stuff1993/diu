@@ -1455,7 +1455,6 @@ int main(void)
 	SystemCoreClockUpdate();
 
 	can1_init(BITRATE500K30MHZ);
-	can2_init(BITRATE125K30MHZ);
 	CAN_SetACCF(ACCF_BYPASS);
 
 	I2C1Init();
