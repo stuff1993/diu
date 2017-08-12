@@ -116,6 +116,9 @@ when Fpclk is 15Mhz, QUANTA is 10 and sample point is 90% */
 #define BITRATE500K30MHZ		0x00070005
 #define BITRATE1000K30MHZ		0x00070002
 
+#define BITRATE125K25MHZ        0x00070016
+#define BITRATE500K25MHZ        0x00070004
+
 /* Acceptance filter mode in AFMR register */
 #define ACCF_OFF				0x01
 #define ACCF_BYPASS				0x02
