@@ -1026,28 +1026,12 @@ void main_can_handler(void)
 		lcd_clear();
 	}
 
-
-
-	// TODO: Remove can packet reads. Use can unpacker to flag a status
-	/*
-	 * List of packets handled:
-	 * Kill drive - 0x520: Use loop to prevent drive logic running. Not done in can.c to release Rx buffer
-	 * SWOC Error - 0x401: Send MC reset packet
-	 */
-	if(can_rx1_done == TRUE)
+	// If only error is SWOC, reset
+	if(esc.error == 0x2 && (AUTO_SWOC || menu.driver == 0))
 	{
-		can_rx1_done = FALSE;
-
-
-		if(can_rx1_buf.MsgID == ESC_BASE + 1 && esc.error == 0x2 && (AUTO_SWOC || menu.driver == 0))
-		{
-			if(esc.error == 0x2)
-			{
-				esc_reset();
-				buzzer(50);
-				NEUTRAL_OFF;REVERSE_OFF;DRIVE_OFF;REGEN_OFF;
-			}
-		}
+		esc_reset();
+		buzzer(50);
+		NEUTRAL_OFF;REVERSE_OFF;DRIVE_OFF;REGEN_OFF;
 	}
 }
 
