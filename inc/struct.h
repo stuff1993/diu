@@ -318,34 +318,34 @@ struct STATS_STRUCT
 #define TOG_STATS_UNUSED7	stats.flags ^= 0x8000;
 
 /// stats.errors
-#define STATS_SWOC_ACK       ((stats.errors & 0x01) >> 0)
-#define STATS_HWOC_ACK       ((stats.errors & 0x02) >> 1)
-#define STATS_COMMS          ((stats.errors & 0x04) >> 2)
-#define STATS_FAULT          ((stats.errors & 0x18) >> 3)
-#define STATS_NO_ARR_HV      ((stats.errors & 0x20) >> 5)
-#define STATS_BMU_ACK        ((stats.errors & 0x40) >> 6)
-#define STATS_EUNUSED_3      ((stats.errors & 0x80) >> 7)
+#define STATS_SWOC_ACK		((stats.errors & 0x01) >> 0)
+#define STATS_HWOC_ACK		((stats.errors & 0x02) >> 1)
+#define STATS_COMMS			((stats.errors & 0x04) >> 2)
+#define STATS_FAULT			((stats.errors & 0x18) >> 3)
+#define STATS_NO_ARR_HV		((stats.errors & 0x20) >> 5)
+#define STATS_BMU_ACK		((stats.errors & 0x40) >> 6)
+#define STATS_STOP			((stats.errors & 0x80) >> 7)
 
-#define SET_STATS_SWOC_ACK   stats.errors |= 0x01;
-#define SET_STATS_HWOC_ACK   stats.errors |= 0x02;
-#define SET_STATS_COMMS      stats.errors |= 0x04;
-#define SET_STATS_NO_ARR_HV  stats.errors |= 0x20;
-#define SET_STATS_BMU_ACK    stats.errors |= 0x40;
-#define SET_STATS_EUNUSED_3  stats.errors |= 0x80;
+#define SET_STATS_SWOC_ACK	stats.errors |= 0x01;
+#define SET_STATS_HWOC_ACK	stats.errors |= 0x02;
+#define SET_STATS_COMMS		stats.errors |= 0x04;
+#define SET_STATS_NO_ARR_HV	stats.errors |= 0x20;
+#define SET_STATS_BMU_ACK	stats.errors |= 0x40;
+#define SET_STATS_STOP		stats.errors |= 0x80;
 
-#define CLR_STATS_SWOC_ACK   stats.errors &= 0xFE;
-#define CLR_STATS_HWOC_ACK   stats.errors &= 0xFD;
-#define CLR_STATS_COMMS      stats.errors &= 0xFB;
-#define CLR_STATS_NO_ARR_HV  stats.errors &= 0xDF;
-#define CLR_STATS_BMU_ACK    stats.errors &= 0xBF;
-#define CLR_STATS_EUNUSED_3  stats.errors &= 0x7F;
+#define CLR_STATS_SWOC_ACK	stats.errors &= 0xFE;
+#define CLR_STATS_HWOC_ACK	stats.errors &= 0xFD;
+#define CLR_STATS_COMMS		stats.errors &= 0xFB;
+#define CLR_STATS_NO_ARR_HV	stats.errors &= 0xDF;
+#define CLR_STATS_BMU_ACK	stats.errors &= 0xBF;
+#define CLR_STATS_STOP		stats.errors &= 0x7F;
 
-#define TOG_STATS_SWOC_ACK   stats.errors ^= 0x01;
-#define TOG_STATS_HWOC_ACK   stats.errors ^= 0x02;
-#define TOG_STATS_COMMS      stats.errors ^= 0x04;
-#define TOG_STATS_NO_ARR_HV  stats.errors ^= 0x20;
-#define TOG_STATS_BMU_ACK    stats.errors ^= 0x40;
-#define TOG_STATS_EUNUSED_3  stats.errors ^= 0x80;
+#define TOG_STATS_SWOC_ACK	stats.errors ^= 0x01;
+#define TOG_STATS_HWOC_ACK	stats.errors ^= 0x02;
+#define TOG_STATS_COMMS		stats.errors ^= 0x04;
+#define TOG_STATS_NO_ARR_HV	stats.errors ^= 0x20;
+#define TOG_STATS_BMU_ACK	stats.errors ^= 0x40;
+#define TOG_STATS_STOP		stats.errors ^= 0x80;
 
 struct DRIVE_STRUCT
 {
