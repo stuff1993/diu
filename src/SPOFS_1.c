@@ -60,7 +60,6 @@ extern volatile uint8_t I2CMasterBuffer[I2C_PORT_NUM][BUFSIZE];
 extern volatile uint32_t I2CWriteLength[I2C_PORT_NUM];
 extern volatile uint32_t I2CReadLength[I2C_PORT_NUM];
 extern volatile uint8_t I2CSlaveBuffer[I2C_PORT_NUM][BUFSIZE];
-extern volatile uint32_t I2CMasterState[I2C_PORT_NUM]; // TODO: For Timeout test - 2015
 ///////////////////////////////////////////////////////////////////////
 
 volatile unsigned char SWITCH_IO  = 0;
