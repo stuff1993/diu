@@ -520,7 +520,11 @@ void dash_data_extract(CAN_MSG *_msg)
 	switch (_msg->MsgID)
 	{
 	case DASH_RQST:
-		can_rx1_done = TRUE;
+		// Data = KILLDRVE
+		if (_msg->DataA == 0x4C4C494B && _msg->DataB == 0x45565244)
+		{
+			SET_STATS_STOP
+		}
 		break;
 	case DASH_RQST + 1:
 		SET_STATS_COMMS
@@ -978,6 +982,52 @@ void main_lights(void)
  ******************************************************************************/
 void main_can_handler(void)
 {
+	if(STATS_STOP)
+	{
+		lcd_clear();
+
+		drive.current = 0;
+		drive.speed_rpm = 0;
+
+		if(menu.driver == 3)
+		{
+			char rot1[20], rot2[20];
+
+			_lcd_putTitle("-GOT DICK-");
+			lcd_putstring(1,0, EROW);
+			sprintf(rot1, "%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c", 0x00, 0x02, 0x04, 0x04, 0x05, 0x00, 0x02, 0x04, 0x04, 0x05, 0x00, 0x02, 0x04, 0x04, 0x05, 0x00, 0x02, 0x04, 0x04, 0x05);
+			lcd_putstring_custom(2,0, rot1, 20); // does not catch nulls
+			sprintf(rot2, "%c%c   %c%c   %c%c   %c%c   ", 0x01, 0x03, 0x01, 0x03, 0x01, 0x03, 0x01, 0x03);
+			lcd_putstring(3,0, rot2);
+			while(FORWARD || REVERSE)
+			{
+				_lcd_putTitle("-GOT DICK-");
+				_buffer_rotate_right(rot1, 20);
+				_buffer_rotate_right(rot2, 20);
+				lcd_putstring_custom(2,0, rot1, 20);
+				lcd_putstring(3,0, rot2);
+				buzzer(5);
+				delayMs(1,250);
+			}
+		}
+		else
+		{
+			while(FORWARD || REVERSE)
+			{
+				_lcd_putTitle("-KILLDRVE-");
+				lcd_putstring(1,0, "--   KILL DRIVE   --");
+				lcd_putstring(2,0, "--   KILL DRIVE   --");
+				lcd_putstring(3,0, "--   KILL DRIVE   --");
+				buzzer(5);
+				delayMs(1,250);
+			}
+		}
+
+		lcd_clear();
+	}
+
+
+
 	// TODO: Remove can packet reads. Use can unpacker to flag a status
 	/*
 	 * List of packets handled:
@@ -988,50 +1038,8 @@ void main_can_handler(void)
 	{
 		can_rx1_done = FALSE;
 
-		if((can_rx1_buf.MsgID == DASH_RQST) && (can_rx1_buf.DataA == 0x4C4C494B) && (can_rx1_buf.DataB == 0x45565244)) // Data = KILLDRVE
-		{
-			lcd_clear();
 
-			drive.current = 0;
-			drive.speed_rpm = 0;
-
-			if(menu.driver == 3)
-			{
-				char rot1[20], rot2[20];
-
-				_lcd_putTitle("-GOT DICK-");
-				lcd_putstring(1,0, EROW);
-				sprintf(rot1, "%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c", 0x00, 0x02, 0x04, 0x04, 0x05, 0x00, 0x02, 0x04, 0x04, 0x05, 0x00, 0x02, 0x04, 0x04, 0x05, 0x00, 0x02, 0x04, 0x04, 0x05);
-				lcd_putstring_custom(2,0, rot1, 20); // does not catch nulls
-				sprintf(rot2, "%c%c   %c%c   %c%c   %c%c   ", 0x01, 0x03, 0x01, 0x03, 0x01, 0x03, 0x01, 0x03);
-				lcd_putstring(3,0, rot2);
-				while(FORWARD || REVERSE)
-				{
-					_lcd_putTitle("-GOT DICK-");
-					_buffer_rotate_right(rot1, 20);
-					_buffer_rotate_right(rot2, 20);
-					lcd_putstring_custom(2,0, rot1, 20);
-					lcd_putstring(3,0, rot2);
-					buzzer(5);
-					delayMs(1,250);
-				}
-			}
-			else
-			{
-				while(FORWARD || REVERSE)
-				{
-					_lcd_putTitle("-KILLDRVE-");
-					lcd_putstring(1,0, "--   KILL DRIVE   --");
-					lcd_putstring(2,0, "--   KILL DRIVE   --");
-					lcd_putstring(3,0, "--   KILL DRIVE   --");
-					buzzer(5);
-					delayMs(1,250);
-				}
-			}
-
-			lcd_clear();
-		}
-		else if(can_rx1_buf.MsgID == ESC_BASE + 1 && esc.error == 0x2 && (AUTO_SWOC || menu.driver == 0))
+		if(can_rx1_buf.MsgID == ESC_BASE + 1 && esc.error == 0x2 && (AUTO_SWOC || menu.driver == 0))
 		{
 			if(esc.error == 0x2)
 			{
