@@ -22,7 +22,7 @@
 #include "timer.h"
 #include "lcd.h"
 #include "adc.h"
-#include "i2c.h"
+#include "eeprom.h"
 #include "struct.h"
 #include "dash.h"
 #include "inputs.h"
@@ -52,13 +52,6 @@ CAN_MSG can_tx2_buf =
 { 0, 0, 0, 0 };
 
 extern CAN_MSG can_rx1_buf;
-
-/////////////////////////////   I2C    ////////////////////////////////
-extern volatile uint8_t I2CMasterBuffer[I2C_PORT_NUM][BUFSIZE];
-extern volatile uint32_t I2CWriteLength[I2C_PORT_NUM];
-extern volatile uint32_t I2CReadLength[I2C_PORT_NUM];
-extern volatile uint8_t I2CSlaveBuffer[I2C_PORT_NUM][BUFSIZE];
-///////////////////////////////////////////////////////////////////////
 
 volatile unsigned char SWITCH_IO  = 0;
 
@@ -1098,154 +1091,6 @@ void esc_reset(void)
 }
 
 /******************************************************************************
- ** Function:    EE_Read
- **
- ** Description: Reads a word from EEPROM (Uses I2CRead)
- **
- ** Parameters:  Address to read from
- ** Return:      Data at address
- **
- ******************************************************************************/
-uint32_t EE_read(uint16_t _EEadd)
-{
-	uint32_t retDATA = 0;
-
-	retDATA = I2C_read(_EEadd + 3);
-	retDATA = (retDATA << 8) + I2C_read(_EEadd + 2);
-	retDATA = (retDATA << 8) + I2C_read(_EEadd + 1);
-	retDATA = (retDATA << 8) + I2C_read(_EEadd + 0);
-
-	return retDATA;
-}
-
-/******************************************************************************
- ** Function:    EE_Seq_Read
- **
- ** Description: Reads a word from EEPROM (Uses I2CRead)
- **
- ** Parameters:  1. Address to read from
- **              2. Byte length of read
- ** Return:      Data at address
- **
- ******************************************************************************/
-uint32_t EE_seq_read(uint16_t _EEadd, int _len)
-{
-	uint32_t _ret = 0;
-
-	I2C_seq_read(_EEadd, _len);
-	while (_len--)
-	{
-		_ret += I2CSlaveBuffer[PORT_USED][_len] << (_len * 8);
-	}
-
-	return _ret;
-}
-
-/******************************************************************************
- ** Function:    EE_Write
- **
- ** Description: Saves a word to EEPROM (Uses I2CWrite)
- **
- ** Parameters:  1. Address to save to
- **              2. Data to save (convert to uint with converter first)
- ** Return:      None
- **
- ******************************************************************************/
-void EE_write(uint16_t _EEadd, uint32_t _EEdata)
-{
-	uint8_t temp0 = (_EEdata & 0x000000FF);
-	uint8_t temp1 = (_EEdata & 0x0000FF00) >> 8;
-	uint8_t temp2 = (_EEdata & 0x00FF0000) >> 16;
-	uint8_t temp3 = (_EEdata & 0xFF000000) >> 24;
-
-	I2C_write(_EEadd, temp0, temp1, temp2, temp3);
-}
-
-/******************************************************************************
- ** Function:    I2C_Read
- **
- ** Description: Reads a byte from EEPROM
- **
- ** Parameters:  Address to read from
- ** Return:      Data at address
- **
- ******************************************************************************/
-uint32_t I2C_read(uint16_t _EEadd)
-{
-	int i;
-
-	for (i = 0; i < BUFSIZE; i++) // clear buffer
-	{
-		I2CMasterBuffer[PORT_USED][i] = 0;
-	}
-
-	I2CWriteLength[PORT_USED] = 3;
-	I2CReadLength[PORT_USED] = 1;
-	I2CMasterBuffer[PORT_USED][0] = _24LC256_ADDR;
-	I2CMasterBuffer[PORT_USED][1] = (_EEadd & 0x0f00) >> 8; // address
-	I2CMasterBuffer[PORT_USED][2] = _EEadd & 0x00ff;        // address
-	I2CMasterBuffer[PORT_USED][3] = _24LC256_ADDR | RD_BIT;
-	I2CEngine( PORT_USED);
-	I2CStop(PORT_USED);
-
-	return (uint32_t) I2CSlaveBuffer[PORT_USED][0];
-}
-
-/******************************************************************************
- ** Function:    I2C_Seq_Read
- **
- ** Description: Reads a byte from EEPROM
- **
- ** Parameters:  1. Address to read from
- **              2. Byte length of read
- ** Return:      None
- **
- ******************************************************************************/
-void I2C_seq_read(uint16_t _EEadd, int read_len)
-{
-	int i;
-	for (i = 0; i < BUFSIZE; i++) // clear buffer
-	{
-		I2CSlaveBuffer[PORT_USED][i] = 0;
-	}
-
-	I2CWriteLength[PORT_USED] = 3;
-	I2CReadLength[PORT_USED] = read_len;
-	I2CMasterBuffer[PORT_USED][0] = _24LC256_ADDR;
-	I2CMasterBuffer[PORT_USED][1] = (_EEadd & 0x0f00) >> 8; // address
-	I2CMasterBuffer[PORT_USED][2] = _EEadd & 0x00ff;        // address
-	I2CMasterBuffer[PORT_USED][3] = _24LC256_ADDR | RD_BIT;
-	I2CEngine( PORT_USED);
-	I2CStop(PORT_USED);
-}
-
-/******************************************************************************
- ** Function:    I2C_Write
- **
- ** Description: Saves a word to EEPROM
- **
- ** Parameters:  1. Address to save to
- **              2. Data to save
- ** Return:      None
- **
- ******************************************************************************/
-void I2C_write(uint16_t _EEadd, uint8_t data0, uint8_t data1, uint8_t data2, uint8_t data3)
-{
-	I2CWriteLength[PORT_USED] = 7;
-	I2CReadLength[PORT_USED] = 0;
-	I2CMasterBuffer[PORT_USED][0] = _24LC256_ADDR;
-	I2CMasterBuffer[PORT_USED][1] = (_EEadd & 0x0f00) >> 8; // address
-	I2CMasterBuffer[PORT_USED][2] = _EEadd & 0x00ff;        // address
-	I2CMasterBuffer[PORT_USED][3] = data0;
-	I2CMasterBuffer[PORT_USED][4] = data1;
-	I2CMasterBuffer[PORT_USED][5] = data2;
-	I2CMasterBuffer[PORT_USED][6] = data3;
-	I2CEngine( PORT_USED);
-
-	delayMs(1, 2);
-}
-
-/******************************************************************************
  ** Function:    persistent_load
  **
  ** Description: Restores persistent variables from EEPROM
@@ -1256,13 +1101,13 @@ void I2C_write(uint16_t _EEadd, uint8_t data0, uint8_t data1, uint8_t data2, uin
  ******************************************************************************/
 void persistent_load(void)
 {
-	stats.flags |= (EE_read(ADD_BUZZ) & 0b1) << 1;
-	stats.odometer = conv_uint_float(EE_read(ADD_ODO));
-	stats.odometer_tr = conv_uint_float(EE_read(ADD_ODOTR));
+	stats.flags |= (ee_read(ADD_BUZZ) & 0b1) << 1;
+	stats.odometer = conv_uint_float(ee_read(ADD_ODO));
+	stats.odometer_tr = conv_uint_float(ee_read(ADD_ODOTR));
 
-	bmu.watt_hrs = conv_uint_float(EE_read(ADD_BMUWHR));
-	mppt1.watt_hrs = conv_uint_float(EE_read(ADD_MPPT1WHR));
-	mppt2.watt_hrs = conv_uint_float(EE_read(ADD_MPPT2WHR));
+	bmu.watt_hrs = conv_uint_float(ee_read(ADD_BMUWHR));
+	mppt1.watt_hrs = conv_uint_float(ee_read(ADD_MPPT1WHR));
+	mppt2.watt_hrs = conv_uint_float(ee_read(ADD_MPPT2WHR));
 }
 
 /******************************************************************************
@@ -1278,14 +1123,14 @@ void persistent_store(void)
 {
 	if (clock.t_s % 2)
 	{
-		EE_write(ADD_ODO, conv_float_uint(stats.odometer));
-		EE_write(ADD_ODOTR, conv_float_uint(stats.odometer_tr));
+		ee_write(ADD_ODO, conv_float_uint(stats.odometer));
+		ee_write(ADD_ODOTR, conv_float_uint(stats.odometer_tr));
 	}
 	else
 	{
-		EE_write(ADD_BMUWHR, conv_float_uint(bmu.watt_hrs));
-		EE_write(ADD_MPPT1WHR, conv_float_uint(mppt1.watt_hrs));
-		EE_write(ADD_MPPT2WHR, conv_float_uint(mppt2.watt_hrs));
+		ee_write(ADD_BMUWHR, conv_float_uint(bmu.watt_hrs));
+		ee_write(ADD_MPPT1WHR, conv_float_uint(mppt1.watt_hrs));
+		ee_write(ADD_MPPT2WHR, conv_float_uint(mppt2.watt_hrs));
 	}
 }
 
