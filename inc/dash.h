@@ -99,8 +99,6 @@
 #define RIGHT_ON        !(LPC_GPIO1->FIOPIN & (1<<0))
 
 
-#define PORT_USED 1 // I2C port
-
 #define ECONOMY (0)
 #define SPORTS  (1)
 
@@ -131,12 +129,6 @@ void      	main_lights         (void);
 void      	main_can_handler    (void);
 void      	main_calc           (void);
 void      	esc_reset           (void);
-uint32_t  	EE_read             (uint16_t _EEadd);
-uint32_t  	EE_seq_read         (uint16_t _EEadd, int _len);
-void      	EE_write            (uint16_t _EEadd, uint32_t data);
-uint32_t  	I2C_read            (uint16_t _EEadd);
-void      	I2C_seq_read        (uint16_t _EEadd, int read_len);
-void      	I2C_write           (uint16_t _EEadd, uint8_t data0, uint8_t data1, uint8_t data2, uint8_t data3);
 void      	nonpersistent_load  (void);
 void      	persistent_load     (void);
 void      	persistent_store    (void);

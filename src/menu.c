@@ -22,6 +22,7 @@
 #include "menu.h"
 #include "dash.h"
 #include "timer.h"
+#include "eeprom.h"
 
 extern CLOCK clock;
 extern BMU bmu;
@@ -1099,7 +1100,7 @@ void menu_options (void)
       switch(menu.submenu_pos)
       {
         case 0:
-          EE_write(ADD_BUZZ, STATS_BUZZER);
+          ee_write(ADD_BUZZ, STATS_BUZZER);
           break;
         case 1:
           menu_init();
