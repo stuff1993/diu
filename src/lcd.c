@@ -10,13 +10,14 @@
 #include "lcd.h"
 #include "timer.h"
 
+// TODO: Retime this
 void delay10US(int count)
 {
   volatile int j=0,i=0;
 
   for(j=0;j<count;j++)
   {
-    for(i=0;i<6;i++);
+    for(i=0;i<98;i++);
   }
 }
 
@@ -29,13 +30,13 @@ void lcd_command_write(unsigned char command)
   if(TEMP & 0b01000000){D2_H;} else{D2_L;}
   if(TEMP & 0b00100000){D1_H;} else{D1_L;}
   if(TEMP & 0b00010000){D0_H;} else{D0_L;}
-  E_H; delay10US(5); E_L;   // Pulse the Enable Pin
+  E_H; delay10US(20); E_L;   // Pulse the Enable Pin
 
   if(TEMP & 0b00001000){D3_H;} else{D3_L;}
   if(TEMP & 0b00000100){D2_H;} else{D2_L;}
   if(TEMP & 0b00000010){D1_H;} else{D1_L;}
   if(TEMP & 0b00000001){D0_H;} else{D0_L;}
-  E_H; delay10US(5); E_L;   // Pulse the Enable Pin
+  E_H; delay10US(20); E_L;   // Pulse the Enable Pin
 }
 
 
@@ -48,19 +49,19 @@ void lcd_data_write( unsigned char data )
   if(TEMP & 0b01000000){D2_H;} else{D2_L;}
   if(TEMP & 0b00100000){D1_H;} else{D1_L;}
   if(TEMP & 0b00010000){D0_H;} else{D0_L;}
-  E_H; delay10US(5); E_L;   // Pulse the Enable Pin
+  E_H; delay10US(20); E_L;   // Pulse the Enable Pin
 
   if(TEMP & 0b00001000){D3_H;} else{D3_L;}
   if(TEMP & 0b00000100){D2_H;} else{D2_L;}
   if(TEMP & 0b00000010){D1_H;} else{D1_L;}
   if(TEMP & 0b00000001){D0_H;} else{D0_L;}
-  E_H; delay10US(5); E_L;   // Pulse the Enable Pin
+  E_H; delay10US(20); E_L;   // Pulse the Enable Pin
 }
 
 void lcd_clear( void)
 {
   lcd_command_write( 0x01 );
-  delay10US(5);
+  delay10US(20);
 }
 
 
