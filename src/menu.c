@@ -184,7 +184,7 @@ void menu_escBus (void)
   lcd_putstring(1,0, buffer);
   if(len<20){_lcd_padding(1, len, 20 - len);}
 
-  len = sprintf(buffer, "Bat Voltage: %05.1fV", shunt.bus_v);
+  len = sprintf(buffer, "Bat Voltage: %05.1fV", shunt.bat_v);
   lcd_putstring(2,0, buffer);
   if(len<20){_lcd_padding(2, len, 20 - len);}
 
@@ -576,7 +576,7 @@ void menu_battery (void)
     case 0:
       _lcd_putTitle("-BAT PWR-");
 
-      len = sprintf(buffer, "%5.3fV @ %5.3fA", shunt.bus_v, shunt.bus_i);
+      len = sprintf(buffer, "%5.3fV @ %5.3fA", shunt.bat_v, shunt.bat_i);
       lcd_putstring(1,0, buffer);
       if(len<20){_lcd_padding(1, len, 20 - len);}
 
@@ -595,22 +595,18 @@ void menu_battery (void)
       lcd_putstring(1,0, buffer);
       if(len<20){_lcd_padding(1, len, 20 - len);}
 
-      len = sprintf(buffer, "In:    %.3f W/hrs", shunt.watt_hrs_in);
-      lcd_putstring(2,0, buffer);
-      if(len<20){_lcd_padding(2, len, 20 - len);}
+      lcd_putstring(2,0, EROW);
 
-      len = sprintf(buffer, "Out:   %.3f W/hrs", shunt.watt_hrs_out);
-      lcd_putstring(3,0, buffer);
-      if(len<20){_lcd_padding(3, len, 20 - len);}
+      lcd_putstring(3,0, EROW);
       break;
     case 2:
       _lcd_putTitle("-BAT PKS-");
 
-      len = sprintf(buffer, "Voltage: %.3fV", shunt.max_bus_v);
+      len = sprintf(buffer, "Voltage: %.3fV", shunt.max_bat_v);
       lcd_putstring(1,0, buffer);
       if(len<20){_lcd_padding(1, len, 20 - len);}
 
-      len = sprintf(buffer, "Current: %.3fA",  shunt.max_bus_i);
+      len = sprintf(buffer, "Current: %.3fA",  shunt.max_bat_i);
       lcd_putstring(2,0, buffer);
       if(len<20){_lcd_padding(2, len, 20 - len);}
 
@@ -620,8 +616,8 @@ void menu_battery (void)
 
       if(btn_release_select())
       {
-        shunt.max_bus_i = 0;
-        shunt.max_bus_v = 0;
+        shunt.max_bat_i = 0;
+        shunt.max_bat_v = 0;
         shunt.max_watts = 0;
         buzzer(50);
       }
@@ -760,11 +756,11 @@ void menu_debug (void)
   lcd_putstring(1,0, buffer);
   if(len<20){_lcd_padding(1,len, 20 - len);}
 
-  len = sprintf(buffer, "%5.1fA  %3luA", shunt.bus_i, bmu.bus_i);
+  len = sprintf(buffer, "%5.1fA  %3luA", shunt.bat_i, bmu.bus_i);
   lcd_putstring(2,0, buffer);
   if(len<20){_lcd_padding(2,len, 20 - len);}
 
-  len = sprintf(buffer, "%5.1fV  %3luV", shunt.bus_v, bmu.bus_v);
+  len = sprintf(buffer, "%5.1fV  %3luV", shunt.bat_v, bmu.bus_v);
   lcd_putstring(3,0, buffer);
   if(len<20){_lcd_padding(3,len, 20 - len);}
 /*
