@@ -544,23 +544,33 @@ void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
 	switch (_msg->MsgID)
 	{
 	case BMU_SHUNT:
-		_shunt->bus_v = conv_uint_float(_msg->DataA); // Values filtered on shunt side
-		_shunt->bus_i = conv_uint_float(_msg->DataB);
-		_shunt->watts = _shunt->bus_i * _shunt->bus_v;
+		_shunt->bat_v = conv_uint_float(_msg->DataA); // Values filtered on shunt side
+		_shunt->bat_i = conv_uint_float(_msg->DataB);
+		_shunt->watts = _shunt->bat_i * _shunt->bat_v;
 		_shunt->con_tim = 3;
 		break;
 	case BMU_SHUNT + 1:
 		_shunt->watt_hrs = conv_uint_float(_msg->DataA);
-		uint32_t _data_b = _msg->DataB;
-		if (_data_b & 0x1)
+		float _data_b = conv_uint_float(_msg->DataB);
+
+		/*
+		 * See MegaBoard.c for packing of this packet.
+		 * Negative value here indicates HV not armed,
+		 * positive indicates armed.
+		 * 100.0 is arbitrarily added by the MegaBoard
+		 * to the MPPT current guarantee that the polarity
+		 * of the float is correct, so must be removed here.
+		 */
+		if (_data_b < 0)
 		{
-			SET_STATS_ARMED
+			CLR_STATS_ARMED
+			_data_b *= -1.0;
 		}
 		else
 		{
-			CLR_STATS_ARMED
+			SET_STATS_ARMED
 		}
-		break;
+		_shunt->mppt_i = _data_b - 100.0;
 	}
 }
 
@@ -1075,8 +1085,9 @@ void main_calc(void)
 	if(bmu.bus_v > bmu.max_bus_v){bmu.max_bus_v = bmu.bus_v;}
 
 	if(shunt.watts > shunt.max_watts){shunt.max_watts = shunt.watts;}
-	if(shunt.bus_i > shunt.max_bus_i){shunt.max_bus_i = shunt.bus_i;}
-	if(shunt.bus_v > shunt.max_bus_v){shunt.max_bus_v = shunt.bus_v;}
+	if(shunt.mppt_i > shunt.max_mppt_i){shunt.max_mppt_i = shunt.mppt_i;}
+	if(shunt.bat_i > shunt.max_bat_i){shunt.max_bat_i = shunt.bat_i;}
+	if(shunt.bat_v > shunt.max_bat_v){shunt.max_bat_v = shunt.bat_v;}
 }
 
 /******************************************************************************
