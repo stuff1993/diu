@@ -122,7 +122,6 @@ void SysTick_Handler(void)
 		mppt2.avg_power += mppt2.watts;
 		stats.avg_power_counter++;
 
-		// TODO: Test DLC and where data needs to go for 1 byte transmission
 		// Light control message
 		// If hazards, set both left and right
 		can_tx1_buf.Frame = 0x00010000;
