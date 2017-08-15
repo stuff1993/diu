@@ -51,8 +51,6 @@ CAN_MSG can_tx1_buf =
 CAN_MSG can_tx2_buf =
 { 0, 0, 0, 0 };
 
-extern CAN_MSG can_rx1_buf;
-
 volatile unsigned char SWITCH_IO  = 0;
 
 uint16_t thr_pos = 0;
@@ -1307,7 +1305,7 @@ int main(void)
 	can1_init(BITRATE500K25MHZ);
 	CAN_SetACCF(ACCF_BYPASS);
 
-	I2C1Init();
+	ee_init();
 
 	nonpersistent_load();
 	persistent_load();

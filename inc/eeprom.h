@@ -5,6 +5,7 @@
 
 #define PORT_USED 1 // I2C port
 
+void		ee_init				(void);
 uint32_t  	ee_read             (uint16_t _EEadd);
 uint32_t  	ee_seq_read         (uint16_t _EEadd, int _len);
 void      	ee_write            (uint16_t _EEadd, uint32_t data);

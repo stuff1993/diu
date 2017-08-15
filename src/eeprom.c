@@ -11,6 +11,31 @@ extern volatile uint32_t I2CReadLength[I2C_PORT_NUM];
 extern volatile uint8_t I2CSlaveBuffer[I2C_PORT_NUM][BUFSIZE];
 
 /******************************************************************************
+ ** Function:    ee_init
+ **
+ ** Description: Reads a word from EEPROM (Uses I2CRead)
+ **
+ ** Parameters:  Address to read from
+ ** Return:      Data at address
+ **
+ ******************************************************************************/
+void ee_init(void)
+{
+	switch (PORT_USED)
+	{
+	case 0:
+		I2C0Init();
+		break;
+	case 1:
+		I2C1Init();
+		break;
+	case 2:
+		I2C2Init();
+		break;
+	}
+}
+
+/******************************************************************************
  ** Function:    ee_read
  **
  ** Description: Reads a word from EEPROM (Uses I2CRead)
