@@ -1,10 +1,3 @@
-/*
- * dash.h
- *
- *  Created on: Jun 9, 2015
- *      Author: Stuff
- */
-
 #ifndef DASH_H_
 #define DASH_H_
 
@@ -24,7 +17,7 @@
 #define LOW_PAD_V         0.25
 #define MID_PAD_V         1.25
 #define HGH_PAD_V         2.25
-#define ADC_POINTS_PER_V  1240.909091
+#define ADC_POINTS_PER_V  1240.909091 // 0-3.3V on pin
 
 #define ECONOMY_RAMP_SPEED  5
 #define SPORTS_RAMP_SPEED   30
@@ -40,7 +33,7 @@
 #define IIR_GAIN_ELECTRICAL 1000
 #define IIR_GAIN_THERMAL    10
 
-/// OUTPUTS
+// OUTPUTS
 #define BUZZER_ON       LPC_GPIO0->FIOSET |= (1<<3);
 #define BUZZER_OFF      LPC_GPIO0->FIOCLR |= (1<<3);
 
@@ -77,7 +70,7 @@
 #define HAZARDS_ON      BLINKER_R_ON;BLINKER_L_ON;
 #define HAZARDS_OFF     BLINKER_R_OFF;BLINKER_L_OFF;
 
-/// INPUTS
+// INPUTS
 #define MECH_BRAKE      !(LPC_GPIO0->FIOPIN & (1<<25))
 
 #define LEFT            !(LPC_GPIO1->FIOPIN & (1<<27))
@@ -98,16 +91,14 @@
 #define LEFT_ON         !(LPC_GPIO1->FIOPIN & (1<<1))
 #define RIGHT_ON        !(LPC_GPIO1->FIOPIN & (1<<0))
 
-
-#define PORT_USED 1 // I2C port
-
+// TOGGLES
 #define ECONOMY (0)
 #define SPORTS  (1)
 
 #define ON      (1)
 #define OFF     (0)
 
-/// EEPROM Addresses ///
+// EEPROM Addresses
 #define ADD_BUZZ     0
 #define ADD_ODO      4
 #define ADD_ODOTR    8
@@ -115,7 +106,7 @@
 #define ADD_BMUWHR   16
 #define ADD_MPPT2WHR 20
 
-/// Function Prototypes ///
+// Function Prototypes
 void      	BOD_IRQHandler      (void);
 void      	main_mppt_poll      (void);
 void      	mppt_data_extract   (MPPT *_mppt, CAN_MSG *_msg);
@@ -131,19 +122,11 @@ void      	main_lights         (void);
 void      	main_can_handler    (void);
 void      	main_calc           (void);
 void      	esc_reset           (void);
-uint32_t  	EE_read             (uint16_t _EEadd);
-uint32_t  	EE_seq_read         (uint16_t _EEadd, int _len);
-void      	EE_write            (uint16_t _EEadd, uint32_t data);
-uint32_t  	I2C_read            (uint16_t _EEadd);
-void      	I2C_seq_read        (uint16_t _EEadd, int read_len);
-void      	I2C_write           (uint16_t _EEadd, uint8_t data0, uint8_t data1, uint8_t data2, uint8_t data3);
 void      	nonpersistent_load  (void);
 void      	persistent_load     (void);
 void      	persistent_store    (void);
 void      	gpio_init           (void);
 void      	buzzer              (uint8_t val);
 void      	BOD_init            (void);
-//void	  	extractMPPT1DATA	(void);
-//void	  	extractMPPT2DATA	(void);
 
 #endif /* DASH_H_ */
