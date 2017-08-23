@@ -179,26 +179,30 @@ void SysTick_Handler(void)
 			shunt.con_tim--;
 		}
 
+		// CAN transceiver seems to struggle to send these and the drive packets above, so only send one at a time.
 		can_tx1_buf.Frame = 0x00080000;
-		can_tx1_buf.MsgID = DASH_RPLY + 3;
-		if (stats.avg_power_counter)
-		{
-			can_tx1_buf.DataA = conv_float_uint(esc.avg_power / stats.avg_power_counter);
+		if (clock.t_s % 2) {
+			can_tx1_buf.MsgID = DASH_RPLY + 3;
+			if (stats.avg_power_counter)
+			{
+				can_tx1_buf.DataA = conv_float_uint(esc.avg_power / stats.avg_power_counter);
+			}
+			else
+			{
+				can_tx1_buf.DataA = 0;
+			}
+			can_tx1_buf.DataB = conv_float_uint((mppt1.watt_hrs + mppt2.watt_hrs));
+			can1_send_message(&can_tx1_buf);
 		}
 		else
 		{
-			can_tx1_buf.DataA = 0;
-		}
-		can_tx1_buf.DataB = conv_float_uint((mppt1.watt_hrs + mppt2.watt_hrs));
-		can1_send_message(&can_tx1_buf);
-
-		if (stats.avg_power_counter)
-		{
-			can_tx1_buf.Frame = 0x00080000;
-			can_tx1_buf.MsgID = DASH_RPLY + 4;
-			can_tx1_buf.DataA = conv_float_uint(mppt1.avg_power / stats.avg_power_counter);
-			can_tx1_buf.DataB = conv_float_uint(mppt2.avg_power / stats.avg_power_counter);
-			can1_send_message(&can_tx1_buf);
+			if (stats.avg_power_counter)
+			{
+				can_tx1_buf.MsgID = DASH_RPLY + 4;
+				can_tx1_buf.DataA = conv_float_uint(mppt1.avg_power / stats.avg_power_counter);
+				can_tx1_buf.DataB = conv_float_uint(mppt2.avg_power / stats.avg_power_counter);
+				can1_send_message(&can_tx1_buf);
+			}
 		}
 
 		// Store data in eeprom every second
@@ -1220,10 +1224,8 @@ void gpio_init(void)
 	 *    30 - OUT - ECO LED
 	 *    31 - OUT - SPORTS LED
 	 */
-	LPC_GPIO1->FIODIR = (1 << 8) | (1 << 19) | (1 << 20) | (1 << 21) | (1 << 23)
-					| (1 << 24) | (1 << 25) | (1 << 26) | (1 << 30) | (1 << 31);
-	LPC_GPIO1->FIOCLR = (1 << 8) | (1 << 19) | (1 << 20) | (1 << 21) | (1 << 23)
-					| (1 << 24) | (1 << 25) | (1 << 26) | (1 << 30) | (1 << 31);
+	LPC_GPIO1->FIODIR = (1 << 8) | (1 << 19) | (1 << 20) | (1 << 21) | (1 << 23) | (1 << 24) | (1 << 25) | (1 << 26) | (1 << 30) | (1 << 31);
+	LPC_GPIO1->FIOCLR = (1 << 8) | (1 << 19) | (1 << 20) | (1 << 21) | (1 << 23) | (1 << 24) | (1 << 25) | (1 << 26) | (1 << 30) | (1 << 31);
 
 	/*
 	 * GPIO2:
@@ -1265,7 +1267,6 @@ void buzzer(uint8_t val)
 	{
 		stats.buz_tim = val;
 		BUZZER_ON
-		;
 	}
 }
 
@@ -1336,7 +1337,6 @@ int main(void)
 		delayMs(1, 1000);
 	}
 
-	// Exiting this loop ends the program
 	while (1)
 	{
 		if ((esc.error & 0x1) && !STATS_HWOC_ACK)
@@ -1393,4 +1393,3 @@ int main(void)
 
 	return 0; // For compilers sanity
 }
-
