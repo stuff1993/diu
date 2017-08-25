@@ -307,6 +307,10 @@ void can1_unpack(CAN_MSG *_msg)
 	{
 		shunt_data_extract(&shunt, _msg);
 	}
+	else if (_msg->MsgID >= (BMU_BASE + BMU_INFO + 4) && _msg->MsgID <= (BMU_BASE + BMU_INFO + 9))
+	{
+		bmu_data_extract(&bmu, _msg);
+	}
 	else if (_msg->MsgID == MPPT1_RPLY)
 	{
 		mppt_data_extract(&mppt1, _msg);

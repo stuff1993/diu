@@ -753,15 +753,16 @@ void menu_debug (void)
 
   _lcd_putTitle("-DEBUG-");
 
-  len = sprintf(buffer, "%5.1fWh %5.1fWh", shunt.watt_hrs, bmu.watt_hrs);
+  len = sprintf(buffer, "%5.1fWh %4dVmin", shunt.watt_hrs, bmu.min_cell_v);
+
   lcd_putstring(1,0, buffer);
   if(len<20){_lcd_padding(1,len, 20 - len);}
 
-  len = sprintf(buffer, "%5.1fA  %3luA", shunt.bat_i, bmu.bus_i);
+  len = sprintf(buffer, "%5.1fA", shunt.bat_i);
   lcd_putstring(2,0, buffer);
   if(len<20){_lcd_padding(2,len, 20 - len);}
 
-  len = sprintf(buffer, "%5.1fV  %3luV", shunt.bat_v, bmu.bus_v);
+  len = sprintf(buffer, "%5.1fV", shunt.bat_v);
   lcd_putstring(3,0, buffer);
   if(len<20){_lcd_padding(3,len, 20 - len);}
 /*
