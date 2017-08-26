@@ -32,6 +32,7 @@
 
 #define IIR_GAIN_ELECTRICAL 1000
 #define IIR_GAIN_THERMAL    10
+#define MIN_CELL_THRESHOLD  2500
 
 // OUTPUTS
 #define BUZZER_ON       LPC_GPIO0->FIOSET |= (1<<3);
@@ -121,6 +122,7 @@ void      	main_paddles        (uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, 
 void      	main_lights         (void);
 void      	main_can_handler    (void);
 void      	main_calc           (void);
+void		min_cell_alarm		(void);
 void      	esc_reset           (void);
 void      	nonpersistent_load  (void);
 void      	persistent_load     (void);

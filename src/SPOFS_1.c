@@ -1088,6 +1088,24 @@ void main_calc(void)
 	if(shunt.bat_v > shunt.max_bat_v){shunt.max_bat_v = shunt.bat_v;}
 }
 
+
+/******************************************************************************
+ ** Function:    min_cell_alarm
+ **
+ ** Description: Sounds Buzzer When Min Voltage Is Below Threshold
+ **
+ ** Parameters:  None
+ ** Return:      None
+ **
+ ******************************************************************************/
+void min_cell_alarm(void)
+{
+	if(bmu.min_cell_v < MIN_CELL_THRESHOLD && bmu.min_cell_v){
+		buzzer(10);
+	}
+}
+
+
 /******************************************************************************
  ** Function:    esc_reset
  **
@@ -1393,6 +1411,7 @@ int main(void)
 		main_can_handler();
 		main_calc();
 		main_driver_check();
+		min_cell_alarm();
 	}
 
 	return 0; // For compilers sanity
