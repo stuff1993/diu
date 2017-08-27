@@ -757,7 +757,7 @@ void main_drive(void)
 	main_paddles(ADC_A, ADC_B, &thr_pos, &rgn_pos);
 
 	if((!FORWARD || !menu.driver || STATS_DRV_MODE) && STATS_CR_STS){buzzer(10);CLR_STATS_CR_ACT;CLR_STATS_CR_STS;stats.cruise_speed = 0;} // Must be in forward or not in display mode to use cruise
-	if(rgn_pos || thr_pos){CLR_STATS_CR_ACT;}
+	if(rgn_pos>10 || thr_pos>10){CLR_STATS_CR_ACT;}
 
 
 	// DRIVE LOGIC
@@ -1056,8 +1056,8 @@ void main_calc(void)
 {
 	// Calculate Power of components
 	esc.watts = esc.bus_v * esc.bus_i;
-
 	bmu.watts = bmu.bus_i * bmu.bus_v;
+
 
 	mppt1.watts = (mppt1.v_in * mppt1.i_in) / 1000.0;
 	mppt2.watts = (mppt2.v_in * mppt2.i_in) / 1000.0;

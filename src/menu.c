@@ -296,7 +296,7 @@ void menu_cruise (void)
       lcd_putstring(1,0, " STS:  ON  ACT:  ON ");
       sprintf(buffer, " SET: %3.0f  SPD: %3.0f ", stats.cruise_speed, esc.velocity_kmh);
       lcd_putstring(2,0, buffer);
-      sprintf(buffer, " THR: %3.0f%% Pow: %3.0fA", esc.bus_i * (100 / MAX_ESC_CUR), esc.watts);
+      sprintf(buffer, " THR: %3.0f%% Pow:%4.0fW", esc.bus_i * (100 / MAX_ESC_CUR), shunt.watts);
       lcd_putstring(3,0, buffer);
 
       // Button presses
