@@ -15,6 +15,7 @@
 #include <cr_section_macros.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "type.h"
 #include "iirfilter.h"
@@ -1155,6 +1156,9 @@ void persistent_load(void)
  ******************************************************************************/
 void persistent_store(void)
 {
+	if(isnanf(stats.odometer))		{stats.odometer = 0.0;}
+	if(isnanf(stats.odometer_tr))	{stats.odometer = 0.0;}
+
 	if (clock.t_s % 2)
 	{
 		ee_write(ADD_ODO, conv_float_uint(stats.odometer));
