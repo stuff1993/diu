@@ -35,7 +35,7 @@ MPPT mppt2 =
 { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 MOTORCONTROLLER esc =
-{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 SHUNT shunt =
 { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -468,6 +468,7 @@ void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
 	switch (_msg->MsgID)
 	{
 	case ESC_BASE + 1:
+		_esc->con_tim = 3;
 		_esc->error = (_msg->DataA >> 16);
 		if (_esc->error == 0x2)
 		{
