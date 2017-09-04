@@ -1092,7 +1092,10 @@ void esc_reset(void)
 	// RESET MOTOR CONTROLLER(S)
 	// see WS22 user manual and Tritium CAN network specs
 	// TODO: try MC + 25 (0x19) + msg "RESETWS" (TRI88.004 ver3 doc, July 2013) - 2015
-	CAN_MSG reset_msg = { 0x00080000, ESC_CONTROL + 3, 0x0, 0x0 };
+	can_tx2_buf.Frame = 0x00080000;  // 11-bit, no RTR, DLC is 1 byte
+	can_tx2_buf.MsgID = ESC_CONTROL + 3;
+	can_tx2_buf.DataA = 0x0;
+	can_tx2_buf.DataB = 0x0;
 	can1_send_message(&reset_msg);
 }
 
