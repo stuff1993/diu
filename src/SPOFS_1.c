@@ -1143,6 +1143,15 @@ void persistent_load(void)
 	bmu.watt_hrs = conv_uint_float(ee_read(ADD_BMUWHR));
 	mppt1.watt_hrs = conv_uint_float(ee_read(ADD_MPPT1WHR));
 	mppt2.watt_hrs = conv_uint_float(ee_read(ADD_MPPT2WHR));
+
+	if (isnanf(stats.odometer))
+	{
+		stats.odometer = 0.0;
+	}
+	if (isnanf(stats.odometer_tr))
+	{
+		stats.odometer_tr = 0.0;
+	}
 }
 
 /******************************************************************************
@@ -1156,8 +1165,14 @@ void persistent_load(void)
  ******************************************************************************/
 void persistent_store(void)
 {
-	if(isnanf(stats.odometer))		{stats.odometer = 0.0;}
-	if(isnanf(stats.odometer_tr))	{stats.odometer = 0.0;}
+	if (isnanf(stats.odometer))
+	{
+		stats.odometer = 0.0;
+	}
+	if (isnanf(stats.odometer_tr))
+	{
+		stats.odometer_tr = 0.0;
+	}
 
 	if (clock.t_s % 2)
 	{
