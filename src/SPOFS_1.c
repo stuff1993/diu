@@ -109,13 +109,6 @@ void SysTick_Handler(void)
 		}
 		can1_send_message(&can_tx1_buf);
 
-		// TODO: This may only need to be sent once - investigate
-		can_tx1_buf.Frame = 0x00080000;
-		can_tx1_buf.MsgID = ESC_CONTROL + 2;
-		can_tx1_buf.DataA = 0x0;
-		can_tx1_buf.DataB = conv_float_uint(1);
-		can1_send_message(&can_tx1_buf);
-
 		// Average power stats
 		esc.avg_power += esc.watts;
 		mppt1.avg_power += mppt1.watts;
@@ -1254,6 +1247,33 @@ void gpio_init(void)
 }
 
 /******************************************************************************
+ **
+ ** Function:    motorcontroller_init
+ **
+ ** Description: Waits for heartbeat from motorcontroller before sending 0x502 packet
+ **
+ ** Parameters:  None
+ ** Return:      None
+ **
+ ******************************************************************************/
+void motorcontroller_init(void)
+{
+	menu_esc_wait();
+	while (esc.con_tim == 0 && !btn_release_select())
+	{
+
+	}
+	can_tx1_buf.Frame = 0x00080000;
+	can_tx1_buf.MsgID = ESC_CONTROL + 2;
+	can_tx1_buf.DataA = 0x0;
+	can_tx1_buf.DataB = conv_float_uint(1);
+	while (!can1_send_message(&can_tx1_buf))
+	{
+
+	}
+}
+
+/******************************************************************************
  ** Function:    buzzer
  **
  ** Description: Turns buzzer on for set amount of time
@@ -1311,14 +1331,16 @@ int main(void)
 	nonpersistent_load();
 	persistent_load();
 
-	SysTick_Config(SystemCoreClock / 100);  // 10mS Systicker.
-
 	ADCInit(ADC_CLK);
 
 	gpio_init();
 
 	lcd_init();
 	lcd_clear();
+
+	motorcontroller_init();
+
+	SysTick_Config(SystemCoreClock / 100);  // 10mS Systicker.
 
 	BOD_init();
 

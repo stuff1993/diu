@@ -54,6 +54,23 @@ void menu_errOnStart (void)
 }
 
 /******************************************************************************
+ ** Function name:  menu_esc_wait
+ **
+ ** Description:    Screen to display while waiting for ESC response
+ **
+ ** Parameters:     None
+ ** Returned value: None
+ **
+ ******************************************************************************/
+void menu_esc_wait(void)
+{
+	lcd_putstring(0,0, " WAITING FOR ESC... ");
+	lcd_putstring(1,0, EROW);
+	lcd_putstring(2,0, "   SELECT TO SKIP   ");
+	lcd_putstring(3,0, EROW);
+}
+
+/******************************************************************************
  ** Function name:  menu_driver
  **
  ** Description:    Select driver type. Determines menus available.
