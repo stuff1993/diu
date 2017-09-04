@@ -716,6 +716,11 @@ void main_input_check(void)
  ******************************************************************************/
 int main_fault_check(void)
 {
+	if (bmu.min_cell_v < MIN_CELL_THRESHOLD && bmu.min_cell_v)
+	{
+		buzzer(10);
+	}
+
 	if (mppt1.i_in == 0 || mppt2.i_in == 0)
 	{
 		SET_STATS_NO_ARR_HV
@@ -1088,24 +1093,6 @@ void main_calc(void)
 	if(shunt.bat_i > shunt.max_bat_i){shunt.max_bat_i = shunt.bat_i;}
 	if(shunt.bat_v > shunt.max_bat_v){shunt.max_bat_v = shunt.bat_v;}
 }
-
-
-/******************************************************************************
- ** Function:    min_cell_alarm
- **
- ** Description: Sounds Buzzer When Min Voltage Is Below Threshold
- **
- ** Parameters:  None
- ** Return:      None
- **
- ******************************************************************************/
-void min_cell_alarm(void)
-{
-	if(bmu.min_cell_v < MIN_CELL_THRESHOLD && bmu.min_cell_v){
-		buzzer(10);
-	}
-}
-
 
 /******************************************************************************
  ** Function:    esc_reset

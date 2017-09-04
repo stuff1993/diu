@@ -122,7 +122,6 @@ void      	main_paddles        (uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, 
 void      	main_lights         (void);
 void      	main_can_handler    (void);
 void      	main_calc           (void);
-void		min_cell_alarm		(void);
 void      	esc_reset           (void);
 void      	nonpersistent_load  (void);
 void      	persistent_load     (void);
