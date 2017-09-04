@@ -1417,7 +1417,6 @@ int main(void)
 		main_can_handler();
 		main_calc();
 		main_driver_check();
-		min_cell_alarm();
 	}
 
 	return 0; // For compilers sanity
