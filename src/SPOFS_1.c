@@ -1131,11 +1131,11 @@ void persistent_load(void)
 	mppt1.watt_hrs = conv_uint_float(ee_read(ADD_MPPT1WHR));
 	mppt2.watt_hrs = conv_uint_float(ee_read(ADD_MPPT2WHR));
 
-	if (isnanf(stats.odometer))
+	if (isnan(stats.odometer))
 	{
 		stats.odometer = 0.0;
 	}
-	if (isnanf(stats.odometer_tr))
+	if (isnan(stats.odometer_tr))
 	{
 		stats.odometer_tr = 0.0;
 	}
@@ -1152,11 +1152,11 @@ void persistent_load(void)
  ******************************************************************************/
 void persistent_store(void)
 {
-	if (isnanf(stats.odometer))
+	if (isnan(stats.odometer))
 	{
 		stats.odometer = 0.0;
 	}
-	if (isnanf(stats.odometer_tr))
+	if (isnan(stats.odometer_tr))
 	{
 		stats.odometer_tr = 0.0;
 	}
