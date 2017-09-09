@@ -35,6 +35,14 @@ void ee_init(void)
 	}
 }
 
+void _ee_read_into(uint16_t _actual_ee_addr, uint32_t *_data)
+{
+	*_data = i2c_read(_actual_ee_addr + 3);
+	*_data = (*_data << 8) + i2c_read(_actual_ee_addr + 2);
+	*_data = (*_data << 8) + i2c_read(_actual_ee_addr + 1);
+	*_data = (*_data << 8) + i2c_read(_actual_ee_addr + 0);
+}
+
 /******************************************************************************
  ** Function:    ee_read
  **
@@ -46,14 +54,28 @@ void ee_init(void)
  ******************************************************************************/
 uint32_t ee_read(uint16_t _ee_addr)
 {
-	uint32_t retDATA = 0;
+	uint32_t data_1 = 0;
+	uint32_t data_2 = 0;
+	uint32_t data_3 = 0;
+	uint16_t actual_addr = _ee_addr * 12;
 
-	retDATA = i2c_read(_ee_addr + 3);
-	retDATA = (retDATA << 8) + i2c_read(_ee_addr + 2);
-	retDATA = (retDATA << 8) + i2c_read(_ee_addr + 1);
-	retDATA = (retDATA << 8) + i2c_read(_ee_addr + 0);
+	_ee_read_into(actual_addr, &data_1);
+	_ee_read_into(actual_addr + 4, &data_2);
+	_ee_read_into(actual_addr + 8, &data_3);
 
-	return retDATA;
+	/*
+	 * If 1 & 2 or 2 & 3 are equal, take the majority value
+	 * If none are equal, take 1 as it will have finished
+	 * it's write, 2 is corrupt and 3 holds the old value
+	 */
+	if (data_1 == data_2 || data_2 == data_3)
+	{
+		return data_2;
+	}
+	else
+	{
+		return data_1;
+	}
 }
 
 /******************************************************************************
@@ -91,12 +113,15 @@ uint32_t ee_seq_read(uint16_t _ee_addr, int _len)
  ******************************************************************************/
 void ee_write(uint16_t _ee_addr, uint32_t _ee_data)
 {
+	uint16_t actual_addr = _ee_addr * 12;
 	uint8_t temp0 = (_ee_data & 0x000000FF);
 	uint8_t temp1 = (_ee_data & 0x0000FF00) >> 8;
 	uint8_t temp2 = (_ee_data & 0x00FF0000) >> 16;
 	uint8_t temp3 = (_ee_data & 0xFF000000) >> 24;
 
-	i2c_write(_ee_addr, temp0, temp1, temp2, temp3);
+	i2c_write(actual_addr, temp0, temp1, temp2, temp3);
+	i2c_write(actual_addr + 4, temp0, temp1, temp2, temp3);
+	i2c_write(actual_addr + 8, temp0, temp1, temp2, temp3);
 }
 
 /******************************************************************************

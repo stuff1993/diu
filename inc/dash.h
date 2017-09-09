@@ -100,12 +100,14 @@
 #define OFF     (0)
 
 // EEPROM Addresses
+// These values only define the order of storage in the EEPROM
+// Logic in eeprom.c handles the actual EEPROM memory addressing
 #define ADD_BUZZ     0
-#define ADD_ODO      4
-#define ADD_ODOTR    8
-#define ADD_MPPT1WHR 12
-#define ADD_BMUWHR   16
-#define ADD_MPPT2WHR 20
+#define ADD_ODO      1
+#define ADD_ODOTR    2
+#define ADD_MPPT1WHR 3
+#define ADD_BMUWHR   4
+#define ADD_MPPT2WHR 5
 
 // Function Prototypes
 void      	BOD_IRQHandler      (void);

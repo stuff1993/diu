@@ -1,13 +1,3 @@
-/*
-===============================================================================
- Name        : SPOFS_1.c
- Author      : Stuart Gales
- Version     :
- Copyright   : $(copyright)
- Description : main definition
-===============================================================================
- */
-
 #ifdef __USE_CMSIS
 #include "LPC17xx.h"
 #endif
