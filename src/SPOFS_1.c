@@ -706,9 +706,10 @@ void main_input_check(void)
  ******************************************************************************/
 int main_fault_check(void)
 {
-	if (bmu.min_cell_v < MIN_CELL_THRESHOLD && bmu.min_cell_v)
+	// Buzz for under voltage and over temp flags
+	if (bmu.status & 0x6)
 	{
-		buzzer(10);
+		force_buzzer(100);
 	}
 
 	if (mppt1.i_in == 0 || mppt2.i_in == 0)
@@ -725,7 +726,7 @@ int main_fault_check(void)
 		drive.speed_rpm = 0;
 		return 2;
 	}
-	if ((mppt1.flags & 0x28) || (mppt2.flags & 0x28) || (bmu.status & 0x7) || (!shunt.con_tim))
+	if ((mppt1.flags & 0x28) || (mppt2.flags & 0x28) || (bmu.status & 0x117) || (!shunt.con_tim))
 	{
 		return 1;
 	}
@@ -1273,7 +1274,7 @@ void gpio_init(void)
 /******************************************************************************
  ** Function:    buzzer
  **
- ** Description: Turns buzzer on for set amount of time
+ ** Description: Turns buzzer on for set amount of time if buzzer on in options
  **
  ** Parameters:  Number of 10mS ticks to sound buzzer
  ** Return:      None
@@ -1283,9 +1284,23 @@ void buzzer(uint8_t val)
 {
 	if (STATS_BUZZER)
 	{
-		stats.buz_tim = val;
-		BUZZER_ON
+		force_buzzer(val);
 	}
+}
+
+/******************************************************************************
+ ** Function:    force_buzzer
+ **
+ ** Description: Turns buzzer on for set amount of time regardless of options
+ **
+ ** Parameters:  Number of 10mS ticks to sound buzzer
+ ** Return:      None
+ **
+ ******************************************************************************/
+void force_buzzer(uint8_t val)
+{
+	stats.buz_tim = val;
+	BUZZER_ON
 }
 
 /******************************************************************************
