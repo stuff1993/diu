@@ -100,34 +100,37 @@
 #define OFF     (0)
 
 // EEPROM Addresses
+// These values only define the order of storage in the EEPROM
+// Logic in eeprom.c handles the actual EEPROM memory addressing
 #define ADD_BUZZ     0
-#define ADD_ODO      4
-#define ADD_ODOTR    8
-#define ADD_MPPT1WHR 12
-#define ADD_BMUWHR   16
-#define ADD_MPPT2WHR 20
+#define ADD_ODO      1
+#define ADD_ODOTR    2
+#define ADD_MPPT1WHR 3
+#define ADD_BMUWHR   4
+#define ADD_MPPT2WHR 5
 
 // Function Prototypes
-void      	BOD_IRQHandler      (void);
-void      	main_mppt_poll      (void);
-void      	mppt_data_extract   (MPPT *_mppt, CAN_MSG *_msg);
-void 		esc_data_extract	(MOTORCONTROLLER *_esc, CAN_MSG *_msg);
-void 		dash_data_extract	(CAN_MSG *_msg);
-void 		shunt_data_extract	(SHUNT *_shunt, CAN_MSG *_msg);
-void 		bmu_data_extract	(BMU *_shunt, CAN_MSG *_msg);
-void      	main_input_check    (void);
-int       	main_fault_check    (void);
-void      	main_drive          (void);
-void      	main_paddles        (uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn);
-void      	main_lights         (void);
-void      	main_can_handler    (void);
-void      	main_calc           (void);
-void      	esc_reset           (void);
-void      	nonpersistent_load  (void);
-void      	persistent_load     (void);
-void      	persistent_store    (void);
-void      	gpio_init           (void);
-void      	buzzer              (uint8_t val);
-void      	BOD_init            (void);
+void main_driver_check(void);
+void main_mppt_poll(void);
+void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg);
+void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg);
+void dash_data_extract(CAN_MSG *_msg);
+void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg);
+void bmu_data_extract(BMU *_shunt, CAN_MSG *_msg);
+void main_input_check(void);
+int main_fault_check(void);
+void main_drive(void);
+void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn);
+void main_lights(void);
+void main_can_handler(void);
+void main_calc(void);
+void esc_reset(void);
+void persistent_load(void);
+void persistent_store(void);
+void nonpersistent_load(void);
+void gpio_init(void);
+void buzzer(uint8_t val);
+void force_buzzer(uint8_t val);
+void BOD_init(void);
 
 #endif /* DASH_H_ */
