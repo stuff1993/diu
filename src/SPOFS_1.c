@@ -26,7 +26,7 @@ MPPT mppt2 =
 { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 MOTORCONTROLLER esc =
-{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 SHUNT shunt =
 { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -168,6 +168,10 @@ void SysTick_Handler(void)
 		if (shunt.con_tim > 0)
 		{
 			shunt.con_tim--;
+		}
+		if (esc.timeout)
+		{
+			esc.timeout--;
 		}
 
 		// CAN transceiver seems to struggle to send these and the drive packets above, so only send one at a time.
@@ -460,6 +464,7 @@ void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg)
  ******************************************************************************/
 void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
 {
+	_esc->timeout = 5;
 	switch (_msg->MsgID)
 	{
 	case ESC_BASE + 1:
@@ -682,7 +687,7 @@ void main_input_check(void)
 		TOG_STATS_HAZARDS
 	}
 
-	if ((MECH_BRAKE || rgn_pos || esc.bus_i < 0))
+	if ((MECH_BRAKE || rgn_pos || (esc.timeout && esc.bus_i < 0)))
 	{
 		SET_STATS_BRAKE
 	}
