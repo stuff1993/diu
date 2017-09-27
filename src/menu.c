@@ -29,7 +29,7 @@ extern BMU bmu;
 extern SHUNT shunt;
 extern MOTORCONTROLLER esc;
 extern MPPT mppt1, mppt2;
-extern CAN_MSG can_tx1_buf;
+extern CAN_MSG can_tx2_buf;
 extern uint16_t thr_pos, rgn_pos;
 
 
@@ -51,6 +51,23 @@ void menu_errOnStart (void)
   lcd_putstring(1,0, EROW);
   lcd_putstring(2,0, "   GEARS ENGAGED!   ");
   lcd_putstring(3,0, EROW);
+}
+
+/******************************************************************************
+ ** Function name:  menu_esc_wait
+ **
+ ** Description:    Screen to display while waiting for ESC response
+ **
+ ** Parameters:     None
+ ** Returned value: None
+ **
+ ******************************************************************************/
+void menu_esc_wait(void)
+{
+	lcd_putstring(0,0, " WAITING FOR ESC... ");
+	lcd_putstring(1,0, EROW);
+	lcd_putstring(2,0, "   SELECT TO SKIP   ");
+	lcd_putstring(3,0, EROW);
 }
 
 /******************************************************************************
@@ -1343,11 +1360,11 @@ void menu_comms (void) // errors[2]
   {
     if((LPC_CAN1->GSR & (1 << 3)))  // If previous transmission is complete, send message;
     {
-      can_tx1_buf.Frame = 0x00010000;  // 11-bit, no RTR, DLC is 1 byte
-      can_tx1_buf.MsgID = DASH_RPLY + 1;
-      can_tx1_buf.DataA = 0xFF;
-      can_tx1_buf.DataB = 0x0;
-      can1_send_message( &can_tx1_buf );
+      can_tx2_buf.Frame = 0x00010000;  // 11-bit, no RTR, DLC is 1 byte
+      can_tx2_buf.MsgID = DASH_RPLY + 1;
+      can_tx2_buf.DataA = 0xFF;
+      can_tx2_buf.DataB = 0x0;
+      can1_send_message( &can_tx2_buf );
     }
     CLR_STATS_COMMS;
   }
@@ -1356,11 +1373,11 @@ void menu_comms (void) // errors[2]
   {
     if((LPC_CAN1->GSR & (1 << 3)))  // If previous transmission is complete, send message;
     {
-      can_tx1_buf.Frame = 0x00010000;  // 11-bit, no RTR, DLC is 1 byte
-      can_tx1_buf.MsgID = DASH_RPLY + 1;
-      can_tx1_buf.DataA = 0x0;
-      can_tx1_buf.DataB = 0x0;
-      can1_send_message( &can_tx1_buf );
+      can_tx2_buf.Frame = 0x00010000;  // 11-bit, no RTR, DLC is 1 byte
+      can_tx2_buf.MsgID = DASH_RPLY + 1;
+      can_tx2_buf.DataA = 0x0;
+      can_tx2_buf.DataB = 0x0;
+      can1_send_message( &can_tx2_buf );
     }
     CLR_STATS_COMMS;
   }

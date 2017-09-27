@@ -100,13 +100,6 @@ void SysTick_Handler(void)
 		}
 		can1_send_message(&can_tx1_buf);
 
-		// TODO: This may only need to be sent once - investigate
-		can_tx1_buf.Frame = 0x00080000;
-		can_tx1_buf.MsgID = ESC_CONTROL + 2;
-		can_tx1_buf.DataA = 0x0;
-		can_tx1_buf.DataB = conv_float_uint(1);
-		can1_send_message(&can_tx1_buf);
-
 		// Average power stats
 		esc.avg_power += esc.watts;
 		mppt1.avg_power += mppt1.watts;
@@ -468,6 +461,7 @@ void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
 	switch (_msg->MsgID)
 	{
 	case ESC_BASE + 1:
+		_esc->con_tim = 3;
 		_esc->error = (_msg->DataA >> 16);
 		if (_esc->error == 0x2)
 		{
@@ -1104,7 +1098,10 @@ void esc_reset(void)
 	// RESET MOTOR CONTROLLER(S)
 	// see WS22 user manual and Tritium CAN network specs
 	// TODO: try MC + 25 (0x19) + msg "RESETWS" (TRI88.004 ver3 doc, July 2013) - 2015
-	CAN_MSG reset_msg = { 0x00080000, ESC_CONTROL + 3, 0x0, 0x0 };
+	can_tx2_buf.Frame = 0x00080000;  // 11-bit, no RTR, DLC is 1 byte
+	can_tx2_buf.MsgID = ESC_CONTROL + 3;
+	can_tx2_buf.DataA = 0x0;
+	can_tx2_buf.DataB = 0x0;
 	can1_send_message(&reset_msg);
 }
 
@@ -1277,6 +1274,33 @@ void gpio_init(void)
 }
 
 /******************************************************************************
+ **
+ ** Function:    motorcontroller_init
+ **
+ ** Description: Waits for heartbeat from motorcontroller before sending 0x502 packet
+ **
+ ** Parameters:  None
+ ** Return:      None
+ **
+ ******************************************************************************/
+void motorcontroller_init(void)
+{
+	menu_esc_wait();
+	while (esc.con_tim == 0 && !btn_release_select())
+	{
+
+	}
+	can_tx1_buf.Frame = 0x00080000;
+	can_tx1_buf.MsgID = ESC_CONTROL + 2;
+	can_tx1_buf.DataA = 0x0;
+	can_tx1_buf.DataB = conv_float_uint(1);
+	while (!can1_send_message(&can_tx1_buf))
+	{
+
+	}
+}
+
+/******************************************************************************
  ** Function:    buzzer
  **
  ** Description: Turns buzzer on for set amount of time if buzzer on in options
@@ -1348,14 +1372,16 @@ int main(void)
 	nonpersistent_load();
 	persistent_load();
 
-	SysTick_Config(SystemCoreClock / 100);  // 10mS Systicker.
-
 	ADCInit(ADC_CLK);
 
 	gpio_init();
 
 	lcd_init();
 	lcd_clear();
+
+	motorcontroller_init();
+
+	SysTick_Config(SystemCoreClock / 100);  // 10mS Systicker.
 
 	BOD_init();
 
