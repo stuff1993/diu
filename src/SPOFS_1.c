@@ -1304,10 +1304,12 @@ void motorcontroller_init(void)
 	can_tx1_buf.MsgID = can_conf.control + 2;
 	can_tx1_buf.DataA = 0x0;
 	can_tx1_buf.DataB = conv_float_uint(1);
+	force_buzzer(20);
 	while (!can1_send_message(&can_tx1_buf))
 	{
 
 	}
+	delayMs(1, 1000);
 }
 
 /******************************************************************************
