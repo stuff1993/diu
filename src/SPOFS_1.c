@@ -1,3 +1,14 @@
+// TODO: Save + change CAN addresses
+// Update drive modes - DISP, TEST, HOT LAP, RACE
+// LED Test on power on
+
+// TODO: For ANU
+// Remove HV control + all shunt stuff?
+// Remove avg power
+// Remove debug mode
+// Remove d mode
+// Need to know more about their HV precharge
+
 #ifdef __USE_CMSIS
 #include "LPC17xx.h"
 #endif
