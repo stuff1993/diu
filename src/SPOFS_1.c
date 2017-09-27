@@ -162,9 +162,9 @@ void SysTick_Handler(void)
 		{
 			shunt.con_tim--;
 		}
-		if (esc.timeout)
+		if (esc.con_tim)
 		{
-			esc.timeout--;
+			esc.con_tim--;
 		}
 
 		// CAN transceiver seems to struggle to send these and the drive packets above, so only send one at a time.
@@ -681,7 +681,7 @@ void main_input_check(void)
 		TOG_STATS_HAZARDS
 	}
 
-	if ((MECH_BRAKE || rgn_pos || (esc.timeout && esc.bus_i < 0)))
+	if ((MECH_BRAKE || rgn_pos || (esc.con_tim && esc.bus_i < 0)))
 	{
 		SET_STATS_BRAKE
 	}
@@ -1102,7 +1102,7 @@ void esc_reset(void)
 	can_tx2_buf.MsgID = ESC_CONTROL + 3;
 	can_tx2_buf.DataA = 0x0;
 	can_tx2_buf.DataB = 0x0;
-	can1_send_message(&reset_msg);
+	can1_send_message(&can_tx2_buf);
 }
 
 /******************************************************************************

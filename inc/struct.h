@@ -81,7 +81,7 @@ typedef struct VECTORS_MTRCONT_STRUCT
 
 typedef struct MOTORCONTROLLER_STRUCT
 {
-	uint8_t timeout;
+	uint8_t con_tim;
 	/// From CAN Bus
 	float bus_i;          // Bus Current
 	float bus_v;          // Bus Voltage
