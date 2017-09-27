@@ -378,4 +378,16 @@ typedef struct SHUNT_STRUCT
 	uint8_t con_tim;
 } SHUNT;
 
+typedef struct CAN_CONFIG_STRUCT
+{
+	uint16_t esc;
+	uint16_t control;
+	uint16_t dash_reply;
+	uint16_t dash_request;
+	uint16_t shunt;
+	uint16_t bmu;
+	uint16_t mppt1;
+	uint16_t mppt2;
+} CAN_CONFIG;
+
 #endif /* STRUCT_H_ */

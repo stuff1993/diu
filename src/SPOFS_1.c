@@ -20,6 +20,9 @@
 #include "can.h"
 #include "menu.h"
 
+CAN_CONFIG can_conf =
+{ 0x400, 0x500, 0x510, 0x520, 0x530, 0x600, 0x716, 0x719 };
+
 MPPT mppt1 =
 { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 MPPT mppt2 =
@@ -88,7 +91,7 @@ void SysTick_Handler(void)
 	if ((!(clock.t_ms % 10)) && STATS_ARMED)
 	{
 		can_tx1_buf.Frame = 0x00080000;
-		can_tx1_buf.MsgID = ESC_CONTROL + 1;
+		can_tx1_buf.MsgID = can_conf.control + 1;
 		can_tx1_buf.DataA = conv_float_uint(drive.speed_rpm);
 		if (drive.current < 0)
 		{
@@ -109,7 +112,7 @@ void SysTick_Handler(void)
 		// Light control message
 		// If hazards, set both left and right
 		can_tx1_buf.Frame = 0x00010000;
-		can_tx1_buf.MsgID = DASH_RPLY;
+		can_tx1_buf.MsgID = can_conf.dash_reply;
 		can_tx1_buf.DataA = STATS_LEFT | (STATS_RIGHT << 1) | (STATS_BRAKE << 2) | STATS_HAZARDS | (STATS_HAZARDS << 1);
 		can_tx1_buf.DataB = 0x0;
 		can1_send_message(&can_tx1_buf);
@@ -170,7 +173,7 @@ void SysTick_Handler(void)
 		// CAN transceiver seems to struggle to send these and the drive packets above, so only send one at a time.
 		can_tx1_buf.Frame = 0x00080000;
 		if (clock.t_s % 2) {
-			can_tx1_buf.MsgID = DASH_RPLY + 3;
+			can_tx1_buf.MsgID = can_conf.dash_reply + 3;
 			if (stats.avg_power_counter)
 			{
 				can_tx1_buf.DataA = conv_float_uint(esc.avg_power / stats.avg_power_counter);
@@ -186,7 +189,7 @@ void SysTick_Handler(void)
 		{
 			if (stats.avg_power_counter)
 			{
-				can_tx1_buf.MsgID = DASH_RPLY + 4;
+				can_tx1_buf.MsgID = can_conf.dash_reply + 4;
 				can_tx1_buf.DataA = conv_float_uint(mppt1.avg_power / stats.avg_power_counter);
 				can_tx1_buf.DataB = conv_float_uint(mppt2.avg_power / stats.avg_power_counter);
 				can1_send_message(&can_tx1_buf);
@@ -283,28 +286,28 @@ void main_mppt_poll(void)
  ******************************************************************************/
 void can1_unpack(CAN_MSG *_msg)
 {
-	if (_msg->MsgID >= ESC_BASE && _msg->MsgID <= ESC_BASE + 23)
+	if (_msg->MsgID >= can_conf.esc && _msg->MsgID <= can_conf.esc + 23)
 	{
 		esc_data_extract(&esc, _msg);
 	}
-	else if (_msg->MsgID >= DASH_RQST && _msg->MsgID <= DASH_RQST + 1)
+	else if (_msg->MsgID >= can_conf.dash_request && _msg->MsgID <= can_conf.dash_request + 1)
 	{
 		dash_data_extract(_msg);
 	}
-	else if (_msg->MsgID >= BMU_SHUNT && _msg->MsgID <= BMU_SHUNT + 1)
+	else if (_msg->MsgID >= can_conf.shunt && _msg->MsgID <= can_conf.shunt + 1)
 	{
 		shunt_data_extract(&shunt, _msg);
 	}
-	else if (_msg->MsgID >= (BMU_BASE + BMU_INFO + 4) && _msg->MsgID <= (BMU_BASE + BMU_INFO + 9))
+	else if (_msg->MsgID >= (can_conf.bmu + BMU_INFO + 4) && _msg->MsgID <= (can_conf.bmu + BMU_INFO + 9))
 	{
 		bmu_data_extract(&bmu, _msg);
 	}
-	else if (_msg->MsgID == MPPT1_RPLY)
+	else if (_msg->MsgID == can_conf.mppt1 + MPPT_RPLY)
 	{
 		mppt_data_extract(&mppt1, _msg);
 		//extractMPPT1DATA();
 	}
-	else if (_msg->MsgID == MPPT2_RPLY)
+	else if (_msg->MsgID == can_conf.mppt2 + MPPT_RPLY)
 	{
 		mppt_data_extract(&mppt2, _msg);
 		//extractMPPT2DATA();
@@ -457,10 +460,11 @@ void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg)
  ******************************************************************************/
 void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
 {
-	_esc->timeout = 5;
-	switch (_msg->MsgID)
+	uint16_t id_offset = _msg->MsgID - can_conf.esc;
+
+	switch (id_offset)
 	{
-	case ESC_BASE + 1:
+	case 1:
 		_esc->con_tim = 3;
 		_esc->error = (_msg->DataA >> 16);
 		if (_esc->error == 0x2)
@@ -471,21 +475,21 @@ void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
 			REGEN_ON
 		}
 		break;
-	case ESC_BASE + 2:
+	case 2:
 		_esc->bus_v = iir_filter_float(_esc->bus_v, conv_uint_float(_msg->DataA), IIR_GAIN_ELECTRICAL);
 		_esc->bus_i = iir_filter_float(_esc->bus_i, conv_uint_float(_msg->DataB), IIR_GAIN_ELECTRICAL);
 		break;
-	case ESC_BASE + 3:
+	case 3:
 		_esc->velocity_kmh = conv_uint_float(_msg->DataB) * 3.6;
 		break;
-	case ESC_BASE + 11:
+	case 11:
 		_esc->heatsink_tmp = conv_uint_float(_msg->DataB);
 		_esc->motor_tmp = conv_uint_float(_msg->DataA);
 		break;
-	case ESC_BASE + 12:
+	case 12:
 		_esc->board_tmp = conv_uint_float(_msg->DataA);
 		break;
-	case ESC_BASE + 14:
+	case 14:
 		_esc->odometer = conv_uint_float(_msg->DataA);
 		break;
 	}
@@ -502,16 +506,18 @@ void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
  ******************************************************************************/
 void dash_data_extract(CAN_MSG *_msg)
 {
-	switch (_msg->MsgID)
+	uint16_t id_offset = _msg->MsgID - can_conf.dash_request;
+
+	switch (id_offset)
 	{
-	case DASH_RQST:
+	case 0:
 		// Data = KILLDRVE
 		if (_msg->DataA == 0x4C4C494B && _msg->DataB == 0x45565244)
 		{
 			SET_STATS_STOP
 		}
 		break;
-	case DASH_RQST + 1:
+	case 1:
 		SET_STATS_COMMS
 		break;
 	}
@@ -529,15 +535,17 @@ void dash_data_extract(CAN_MSG *_msg)
  ******************************************************************************/
 void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
 {
-	switch (_msg->MsgID)
+	uint16_t id_offset = _msg->MsgID - can_conf.shunt;
+
+	switch (id_offset)
 	{
-	case BMU_SHUNT:
+	case 0:
 		_shunt->bat_v = conv_uint_float(_msg->DataA); // Values filtered on shunt side
 		_shunt->bat_i = conv_uint_float(_msg->DataB);
 		_shunt->watts = _shunt->bat_i * _shunt->bat_v;
 		_shunt->con_tim = 3;
 		break;
-	case BMU_SHUNT + 1:
+	case 1:
 		_shunt->watt_hrs = conv_uint_float(_msg->DataA);
 		float _data_b = conv_uint_float(_msg->DataB);
 
@@ -574,9 +582,11 @@ void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
  ******************************************************************************/
 void bmu_data_extract(BMU *_bmu, CAN_MSG *_msg)
 {
-	switch (_msg->MsgID)
+	uint16_t id_offset = _msg->MsgID - can_conf.bmu;
+
+	switch (id_offset)
 	{
-	case BMU_BASE + BMU_INFO + 4:
+	case BMU_INFO + 4:
 		_bmu->min_cell_v = _msg->DataA & 0xFFFF;
 		_bmu->max_cell_v = (_msg->DataA >> 16) & 0xFFFF;
 		_bmu->cmu_min_v = _msg->DataB & 0xFF;
@@ -584,18 +594,18 @@ void bmu_data_extract(BMU *_bmu, CAN_MSG *_msg)
 		_bmu->cell_min_v = (_msg->DataB >> 8) & 0xFF;
 		_bmu->cell_max_v = (_msg->DataB >> 24) & 0xFF;
 		break;
-	case BMU_BASE + BMU_INFO + 5:
+	case BMU_INFO + 5:
 		_bmu->max_cell_tmp = _msg->DataA & 0xFFFF;
 		_bmu->max_cell_tmp = (_msg->DataA >> 16) & 0xFFFF;
 		_bmu->cmu_min_tmp = _msg->DataB & 0xFF;
 		_bmu->cmu_max_tmp = (_msg->DataB >> 16) & 0xFF;
 		break;
-	case BMU_BASE + BMU_INFO + 6:
+	case BMU_INFO + 6:
 		// Packet is in mV and mA
 		_bmu->bus_v = iir_filter_uint(_msg->DataA / 1000, _bmu->bus_v, IIR_GAIN_ELECTRICAL);
 		_bmu->bus_i = iir_filter_int(_msg->DataB / 1000, _bmu->bus_i, IIR_GAIN_ELECTRICAL);
 		break;
-	case BMU_BASE + BMU_INFO + 9:
+	case BMU_INFO + 9:
 		_bmu->status = _msg->DataA & 0x7; // Only Voltage and Temperature flags relevant
 		break;
 	}
@@ -659,7 +669,7 @@ void main_input_check(void)
 			if((LPC_CAN1->GSR & (1 << 3)))  // Check Global Status Register
 			{
 				can_tx1_buf.Frame = 0x00010000; // 11-bit, no RTR, DLC is 1 byte
-				can_tx1_buf.MsgID = DASH_RPLY + 1;
+				can_tx1_buf.MsgID = can_conf.dash_reply + 1;
 				can_tx1_buf.DataA = 0x0;
 				can_tx1_buf.DataB = 0x0;
 				can1_send_message(&can_tx1_buf);
@@ -1099,7 +1109,7 @@ void esc_reset(void)
 	// see WS22 user manual and Tritium CAN network specs
 	// TODO: try MC + 25 (0x19) + msg "RESETWS" (TRI88.004 ver3 doc, July 2013) - 2015
 	can_tx2_buf.Frame = 0x00080000;  // 11-bit, no RTR, DLC is 1 byte
-	can_tx2_buf.MsgID = ESC_CONTROL + 3;
+	can_tx2_buf.MsgID = can_conf.control + 3;
 	can_tx2_buf.DataA = 0x0;
 	can_tx2_buf.DataB = 0x0;
 	can1_send_message(&can_tx2_buf);
@@ -1291,7 +1301,7 @@ void motorcontroller_init(void)
 
 	}
 	can_tx1_buf.Frame = 0x00080000;
-	can_tx1_buf.MsgID = ESC_CONTROL + 2;
+	can_tx1_buf.MsgID = can_conf.control + 2;
 	can_tx1_buf.DataA = 0x0;
 	can_tx1_buf.DataB = conv_float_uint(1);
 	while (!can1_send_message(&can_tx1_buf))

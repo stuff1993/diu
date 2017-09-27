@@ -31,6 +31,7 @@ extern MOTORCONTROLLER esc;
 extern MPPT mppt1, mppt2;
 extern CAN_MSG can_tx2_buf;
 extern uint16_t thr_pos, rgn_pos;
+extern CAN_CONFIG can_conf;
 
 
 //////////////////////////////////////////////
@@ -852,31 +853,31 @@ void menu_config (void)
         {
           default:
           case 0:
-            sprintf(buffer, "ESC_BASE      %#05x ", ESC_BASE);
+            sprintf(buffer, "ESC_BASE      %#05x ", can_conf.esc);
             lcd_putstring(1,0, buffer);
-            sprintf(buffer, "ESC_CONTROL   %#05x ", ESC_CONTROL);
+            sprintf(buffer, "ESC_CONTROL   %#05x ", can_conf.control);
             lcd_putstring(2,0, buffer);
-            sprintf(buffer, "BMU_BASE      %#05x ", BMU_BASE);
+            sprintf(buffer, "BMU_BASE      %#05x ", can_conf.bmu);
             lcd_putstring(3,0, buffer);
             break;
           case 1:
-            sprintf(buffer, "DASH_RPLY     %#05x ", DASH_RPLY);
+            sprintf(buffer, "DASH_RPLY     %#05x ", can_conf.dash_reply);
             lcd_putstring(1,0, buffer);
-            sprintf(buffer, "DASH_RQST     %#05x ", DASH_RQST);
+            sprintf(buffer, "DASH_RQST     %#05x ", can_conf.dash_request);
             lcd_putstring(2,0, buffer);
-            sprintf(buffer, "MPPT1_BASE    %#05x ", MPPT1_BASE);
+            sprintf(buffer, "MPPT1_BASE    %#05x ", can_conf.mppt1);
             lcd_putstring(3,0, buffer);
             break;
           case 2:
-            sprintf(buffer, "MPPT1_RPLY    %#05x ", MPPT1_RPLY);
+            sprintf(buffer, "MPPT1_RPLY    %#05x ", can_conf.mppt1 + MPPT_RPLY);
             lcd_putstring(1,0, buffer);
-            sprintf(buffer, "MPPT2_BASE    %#05x ", MPPT2_BASE);
+            sprintf(buffer, "MPPT2_BASE    %#05x ", can_conf.mppt2);
             lcd_putstring(2,0, buffer);
-            sprintf(buffer, "MPPT2_RPLY    %#05x ", MPPT2_RPLY);
+            sprintf(buffer, "MPPT2_RPLY    %#05x ", can_conf.mppt2 + MPPT_RPLY);
             lcd_putstring(3,0, buffer);
             break;
           case 3:
-        	sprintf(buffer, "BMU_SHUNT     %#05x ", BMU_SHUNT);
+        	sprintf(buffer, "BMU_SHUNT     %#05x ", can_conf.shunt);
         	lcd_putstring(1,0, buffer);
         	lcd_putstring(2,0, EROW);
         	lcd_putstring(3,0, EROW);
@@ -1361,7 +1362,7 @@ void menu_comms (void) // errors[2]
     if((LPC_CAN1->GSR & (1 << 3)))  // If previous transmission is complete, send message;
     {
       can_tx2_buf.Frame = 0x00010000;  // 11-bit, no RTR, DLC is 1 byte
-      can_tx2_buf.MsgID = DASH_RPLY + 1;
+      can_tx2_buf.MsgID = can_conf.dash_reply + 1;
       can_tx2_buf.DataA = 0xFF;
       can_tx2_buf.DataB = 0x0;
       can1_send_message( &can_tx2_buf );
@@ -1374,7 +1375,7 @@ void menu_comms (void) // errors[2]
     if((LPC_CAN1->GSR & (1 << 3)))  // If previous transmission is complete, send message;
     {
       can_tx2_buf.Frame = 0x00010000;  // 11-bit, no RTR, DLC is 1 byte
-      can_tx2_buf.MsgID = DASH_RPLY + 1;
+      can_tx2_buf.MsgID = can_conf.dash_reply + 1;
       can_tx2_buf.DataA = 0x0;
       can_tx2_buf.DataB = 0x0;
       can1_send_message( &can_tx2_buf );

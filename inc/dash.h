@@ -34,6 +34,10 @@
 #define IIR_GAIN_THERMAL    10
 #define MIN_CELL_THRESHOLD  2500
 
+// CAN offsets
+#define BMU_INFO        	0xF4
+#define MPPT_RPLY			0x60
+
 // OUTPUTS
 #define BUZZER_ON       LPC_GPIO0->FIOSET |= (1<<3);
 #define BUZZER_OFF      LPC_GPIO0->FIOCLR |= (1<<3);
