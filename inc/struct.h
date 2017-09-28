@@ -378,7 +378,7 @@ typedef struct SHUNT_STRUCT
 	uint8_t con_tim;
 } SHUNT;
 
-typedef struct CAN_CONFIG_STRUCT
+typedef struct CAR_CONFIG_STRUCT
 {
 	uint16_t esc;
 	uint16_t control;
@@ -388,6 +388,14 @@ typedef struct CAN_CONFIG_STRUCT
 	uint16_t bmu;
 	uint16_t mppt1;
 	uint16_t mppt2;
-} CAN_CONFIG;
+	float wheel_d;
+} CAR_CONFIG;
+
+typedef struct CONFIG_DISPLAY_STRUCT
+{
+	char format[30];
+	uint8_t type; // 0 - uint8, 1 uint16, 2 uint32, 3 float
+	void *value;
+} CONFIG_DISPLAY;
 
 #endif /* STRUCT_H_ */

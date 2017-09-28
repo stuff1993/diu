@@ -112,6 +112,11 @@
 #define ADD_MPPT1WHR 3
 #define ADD_BMUWHR   4
 #define ADD_MPPT2WHR 5
+#define ADD_CONF1    6
+#define ADD_CONF2    7
+#define ADD_CONF3    8
+#define ADD_CONF4    9
+#define ADD_CONF5    10
 
 // Function Prototypes
 void main_driver_check(void);

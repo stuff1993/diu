@@ -1,5 +1,4 @@
-// TODO: Save + change CAN addresses
-// Update drive modes - DISP, TEST, HOT LAP, RACE
+// TODO: Update drive modes - DISP, TEST, HOT LAP, RACE
 
 // TODO: For ANU
 // Remove HV control + all shunt stuff?
@@ -101,7 +100,7 @@ void SysTick_Handler(void)
 	if ((!(clock.t_ms % 10)) && STATS_ARMED)
 	{
 		can_tx1_buf.Frame = 0x00080000;
-		can_tx1_buf.MsgID = can_conf.control + 1;
+		can_tx1_buf.MsgID = config.control + 1;
 		can_tx1_buf.DataA = conv_float_uint(drive.speed_rpm);
 		if (drive.current < 0)
 		{
@@ -122,7 +121,7 @@ void SysTick_Handler(void)
 		// Light control message
 		// If hazards, set both left and right
 		can_tx1_buf.Frame = 0x00010000;
-		can_tx1_buf.MsgID = can_conf.dash_reply;
+		can_tx1_buf.MsgID = config.dash_reply;
 		can_tx1_buf.DataA = STATS_LEFT | (STATS_RIGHT << 1) | (STATS_BRAKE << 2) | STATS_HAZARDS | (STATS_HAZARDS << 1);
 		can_tx1_buf.DataB = 0x0;
 		can1_send_message(&can_tx1_buf);
@@ -183,7 +182,7 @@ void SysTick_Handler(void)
 		// CAN transceiver seems to struggle to send these and the drive packets above, so only send one at a time.
 		can_tx1_buf.Frame = 0x00080000;
 		if (clock.t_s % 2) {
-			can_tx1_buf.MsgID = can_conf.dash_reply + 3;
+			can_tx1_buf.MsgID = config.dash_reply + 3;
 			if (stats.avg_power_counter)
 			{
 				can_tx1_buf.DataA = conv_float_uint(esc.avg_power / stats.avg_power_counter);
@@ -199,7 +198,7 @@ void SysTick_Handler(void)
 		{
 			if (stats.avg_power_counter)
 			{
-				can_tx1_buf.MsgID = can_conf.dash_reply + 4;
+				can_tx1_buf.MsgID = config.dash_reply + 4;
 				can_tx1_buf.DataA = conv_float_uint(mppt1.avg_power / stats.avg_power_counter);
 				can_tx1_buf.DataB = conv_float_uint(mppt2.avg_power / stats.avg_power_counter);
 				can1_send_message(&can_tx1_buf);
@@ -296,28 +295,28 @@ void main_mppt_poll(void)
  ******************************************************************************/
 void can1_unpack(CAN_MSG *_msg)
 {
-	if (_msg->MsgID >= can_conf.esc && _msg->MsgID <= can_conf.esc + 23)
+	if (_msg->MsgID >= config.esc && _msg->MsgID <= config.esc + 23)
 	{
 		esc_data_extract(&esc, _msg);
 	}
-	else if (_msg->MsgID >= can_conf.dash_request && _msg->MsgID <= can_conf.dash_request + 1)
+	else if (_msg->MsgID >= config.dash_request && _msg->MsgID <= config.dash_request + 1)
 	{
 		dash_data_extract(_msg);
 	}
-	else if (_msg->MsgID >= can_conf.shunt && _msg->MsgID <= can_conf.shunt + 1)
+	else if (_msg->MsgID >= config.shunt && _msg->MsgID <= config.shunt + 1)
 	{
 		shunt_data_extract(&shunt, _msg);
 	}
-	else if (_msg->MsgID >= (can_conf.bmu + BMU_INFO + 4) && _msg->MsgID <= (can_conf.bmu + BMU_INFO + 9))
+	else if (_msg->MsgID >= (config.bmu + BMU_INFO + 4) && _msg->MsgID <= (config.bmu + BMU_INFO + 9))
 	{
 		bmu_data_extract(&bmu, _msg);
 	}
-	else if (_msg->MsgID == can_conf.mppt1 + MPPT_RPLY)
+	else if (_msg->MsgID == config.mppt1 + MPPT_RPLY)
 	{
 		mppt_data_extract(&mppt1, _msg);
 		//extractMPPT1DATA();
 	}
-	else if (_msg->MsgID == can_conf.mppt2 + MPPT_RPLY)
+	else if (_msg->MsgID == config.mppt2 + MPPT_RPLY)
 	{
 		mppt_data_extract(&mppt2, _msg);
 		//extractMPPT2DATA();
@@ -470,7 +469,7 @@ void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg)
  ******************************************************************************/
 void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
 {
-	uint16_t id_offset = _msg->MsgID - can_conf.esc;
+	uint16_t id_offset = _msg->MsgID - config.esc;
 
 	switch (id_offset)
 	{
@@ -516,7 +515,7 @@ void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
  ******************************************************************************/
 void dash_data_extract(CAN_MSG *_msg)
 {
-	uint16_t id_offset = _msg->MsgID - can_conf.dash_request;
+	uint16_t id_offset = _msg->MsgID - config.dash_request;
 
 	switch (id_offset)
 	{
@@ -545,7 +544,7 @@ void dash_data_extract(CAN_MSG *_msg)
  ******************************************************************************/
 void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
 {
-	uint16_t id_offset = _msg->MsgID - can_conf.shunt;
+	uint16_t id_offset = _msg->MsgID - config.shunt;
 
 	switch (id_offset)
 	{
@@ -592,7 +591,7 @@ void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
  ******************************************************************************/
 void bmu_data_extract(BMU *_bmu, CAN_MSG *_msg)
 {
-	uint16_t id_offset = _msg->MsgID - can_conf.bmu;
+	uint16_t id_offset = _msg->MsgID - config.bmu;
 
 	switch (id_offset)
 	{
@@ -679,7 +678,7 @@ void main_input_check(void)
 			if((LPC_CAN1->GSR & (1 << 3)))  // Check Global Status Register
 			{
 				can_tx1_buf.Frame = 0x00010000; // 11-bit, no RTR, DLC is 1 byte
-				can_tx1_buf.MsgID = can_conf.dash_reply + 1;
+				can_tx1_buf.MsgID = config.dash_reply + 1;
 				can_tx1_buf.DataA = 0x0;
 				can_tx1_buf.DataB = 0x0;
 				can1_send_message(&can_tx1_buf);
@@ -1119,7 +1118,7 @@ void esc_reset(void)
 	// see WS22 user manual and Tritium CAN network specs
 	// TODO: try MC + 25 (0x19) + msg "RESETWS" (TRI88.004 ver3 doc, July 2013) - 2015
 	can_tx2_buf.Frame = 0x00080000;  // 11-bit, no RTR, DLC is 1 byte
-	can_tx2_buf.MsgID = can_conf.control + 3;
+	can_tx2_buf.MsgID = config.control + 3;
 	can_tx2_buf.DataA = 0x0;
 	can_tx2_buf.DataB = 0x0;
 	can1_send_message(&can_tx2_buf);
@@ -1143,6 +1142,13 @@ void persistent_load(void)
 	bmu.watt_hrs = conv_uint_float(ee_read(ADD_BMUWHR));
 	mppt1.watt_hrs = conv_uint_float(ee_read(ADD_MPPT1WHR));
 	mppt2.watt_hrs = conv_uint_float(ee_read(ADD_MPPT2WHR));
+
+	uint32_t *conf_add = (uint32_t *)(&(config.esc));
+	*conf_add++ = ee_read(ADD_CONF1);
+	*conf_add++ = ee_read(ADD_CONF2);
+	*conf_add++ = ee_read(ADD_CONF3);
+	*conf_add++ = ee_read(ADD_CONF4);
+	*conf_add = ee_read(ADD_CONF5);
 
 	if (isnan(stats.odometer))
 	{
@@ -1174,16 +1180,26 @@ void persistent_store(void)
 		stats.odometer_tr = 0.0;
 	}
 
-	if (clock.t_s % 2)
+	switch (clock.t_s % 3)
 	{
+	case 0:
 		ee_write(ADD_ODO, conv_float_uint(stats.odometer));
 		ee_write(ADD_ODOTR, conv_float_uint(stats.odometer_tr));
-	}
-	else
-	{
+		break;
+	case 1:
 		ee_write(ADD_BMUWHR, conv_float_uint(bmu.watt_hrs));
 		ee_write(ADD_MPPT1WHR, conv_float_uint(mppt1.watt_hrs));
 		ee_write(ADD_MPPT2WHR, conv_float_uint(mppt2.watt_hrs));
+		break;
+	case 2:
+		;
+		uint32_t *conf_add = (uint32_t *)(&(config.esc));
+		ee_write(ADD_CONF1, *conf_add++);
+		ee_write(ADD_CONF2, *conf_add++);
+		ee_write(ADD_CONF3, *conf_add++);
+		ee_write(ADD_CONF4, *conf_add++);
+		ee_write(ADD_CONF5, *conf_add);
+		break;
 	}
 }
 
@@ -1353,7 +1369,7 @@ void motorcontroller_init(void)
 
 	}
 	can_tx1_buf.Frame = 0x00080000;
-	can_tx1_buf.MsgID = can_conf.control + 2;
+	can_tx1_buf.MsgID = config.control + 2;
 	can_tx1_buf.DataA = 0x0;
 	can_tx1_buf.DataB = conv_float_uint(1);
 	force_buzzer(20);

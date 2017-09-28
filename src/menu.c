@@ -31,7 +31,20 @@ extern MOTORCONTROLLER esc;
 extern MPPT mppt1, mppt2;
 extern CAN_MSG can_tx2_buf;
 extern uint16_t thr_pos, rgn_pos;
-extern CAN_CONFIG can_conf;
+extern CAR_CONFIG config;
+
+CONFIG_DISPLAY options[9] =
+{
+		{"ESC     %#05x", 1, &(config.esc)},
+		{"CONTROL %#05x", 1, &(config.control)},
+		{"REPLY   %#05x", 1, &(config.dash_reply)},
+		{"REQUEST %#05x", 1, &(config.dash_request)},
+		{"SHUNT   %#05x", 1, &(config.shunt)},
+		{"BMU     %#05x", 1, &(config.bmu)},
+		{"MPPT1   %#05x", 1, &(config.mppt1)},
+		{"MPPT2   %#05x", 1, &(config.mppt2)},
+		{"WHEEL d %5.3f", 3, &(config.wheel_d)}
+};
 
 
 //////////////////////////////////////////////
@@ -802,202 +815,118 @@ void menu_debug (void)
  ******************************************************************************/
 void menu_config (void)
 {
-  char buffer[20];
-  static uint8_t scroll = 0;
-  menu.submenu_items = 4;
+	char buffer[20];
+	int len;
+	menu.submenu_items = 9;
 
-  if(!MENU_SELECTED)
-  {
-    _lcd_putTitle("-CONFIG-");
-    lcd_putstring(1,0, "   CAN      PADDLES ");
-    lcd_putstring(2,0, "   OTHER    LIMITS  ");
-    lcd_putstring(3,0, EROW);
+	_lcd_putTitle("-CONFIG-");
 
-    switch(menu.submenu_pos)
-    {
-      default:
-      case 0:
-        lcd_putstring(1,0, clock.blink?SELECTOR:DESELECTOR);
-        lcd_putstring(1,9, DESELECTOR);
-        lcd_putstring(2,0, DESELECTOR);
-        lcd_putstring(2,9, DESELECTOR);
-        break;
-      case 1:
-        lcd_putstring(1,0, DESELECTOR);
-        lcd_putstring(1,9, DESELECTOR);
-        lcd_putstring(2,0, clock.blink?SELECTOR:DESELECTOR);
-        lcd_putstring(2,9, DESELECTOR);
-        break;
-      case 2:
-        lcd_putstring(1,0, DESELECTOR);
-        lcd_putstring(1,9, clock.blink?SELECTOR:DESELECTOR);
-        lcd_putstring(2,0, DESELECTOR);
-        lcd_putstring(2,9, DESELECTOR);
-        break;
-      case 3:
-        lcd_putstring(1,0, DESELECTOR);
-        lcd_putstring(1,9, DESELECTOR);
-        lcd_putstring(2,0, DESELECTOR);
-        lcd_putstring(2,9, clock.blink?SELECTOR:DESELECTOR);
-        break;
-    }
-  }
-  else
-  {
-    switch(menu.submenu_pos)
-    {
-      default:
-      case 0:
-        _lcd_putTitle("-CAN-");
-        switch(scroll)
-        {
-          default:
-          case 0:
-            sprintf(buffer, "ESC_BASE      %#05x ", can_conf.esc);
-            lcd_putstring(1,0, buffer);
-            sprintf(buffer, "ESC_CONTROL   %#05x ", can_conf.control);
-            lcd_putstring(2,0, buffer);
-            sprintf(buffer, "BMU_BASE      %#05x ", can_conf.bmu);
-            lcd_putstring(3,0, buffer);
-            break;
-          case 1:
-            sprintf(buffer, "DASH_RPLY     %#05x ", can_conf.dash_reply);
-            lcd_putstring(1,0, buffer);
-            sprintf(buffer, "DASH_RQST     %#05x ", can_conf.dash_request);
-            lcd_putstring(2,0, buffer);
-            sprintf(buffer, "MPPT1_BASE    %#05x ", can_conf.mppt1);
-            lcd_putstring(3,0, buffer);
-            break;
-          case 2:
-            sprintf(buffer, "MPPT1_RPLY    %#05x ", can_conf.mppt1 + MPPT_RPLY);
-            lcd_putstring(1,0, buffer);
-            sprintf(buffer, "MPPT2_BASE    %#05x ", can_conf.mppt2);
-            lcd_putstring(2,0, buffer);
-            sprintf(buffer, "MPPT2_RPLY    %#05x ", can_conf.mppt2 + MPPT_RPLY);
-            lcd_putstring(3,0, buffer);
-            break;
-          case 3:
-        	sprintf(buffer, "BMU_SHUNT     %#05x ", can_conf.shunt);
-        	lcd_putstring(1,0, buffer);
-        	lcd_putstring(2,0, EROW);
-        	lcd_putstring(3,0, EROW);
-        }
-        break;
-      case 1:
-        _lcd_putTitle("-OTHER-");
-        sprintf(buffer, "AUTO_SWOC       %1d   ", AUTO_SWOC);
-        lcd_putstring(1,0, buffer);
-        sprintf(buffer, "WHEEL D (M)   %5.3f ", WHEEL_D_M);
-        lcd_putstring(2,0, buffer);
-        lcd_putstring(3,0, EROW);
-        break;
-        break;
-      case 2:
-        _lcd_putTitle("-PADDLES-");
-        switch(scroll)
-        {
-          default:
-          case 0:
-            sprintf(buffer, "MAX_RGN_DZ    %5.2f ", MAX_RGN_DZ);
-            lcd_putstring(1,0, buffer);
-            sprintf(buffer, "MIN_RGN_DZ    %5.2f ", MIN_RGN_DZ);
-            lcd_putstring(2,0, buffer);
-            sprintf(buffer, "MAX_THR_DZ    %5.2f ", MAX_THR_DZ);
-            lcd_putstring(3,0, buffer);
-            break;
-          case 1:
-            sprintf(buffer, "MIN_THR_DZ    %5.2f ", MIN_THR_DZ);
-            lcd_putstring(1,0, buffer);
-            sprintf(buffer, "LOW_PAD_V     %5.2f ", LOW_PAD_V);
-            lcd_putstring(2,0, buffer);
-            sprintf(buffer, "MID_PAD_V     %5.2f ", MID_PAD_V);
-            lcd_putstring(3,0, buffer);
-            break;
-          case 2:
-            sprintf(buffer, "HGH_PAD_V     %5.2f ", HGH_PAD_V);
-            lcd_putstring(1,0, buffer);
-            sprintf(buffer, "ADC/V         %5.0f ", ADC_POINTS_PER_V);
-            lcd_putstring(2,0, buffer);
-            lcd_putstring(3,0, EROW);
-            break;
-        }
-        break;
-          case 3:
-        _lcd_putTitle("-LIMITS-");
-        switch(scroll)
-        {
-          default:
-          case 0:
-            sprintf(buffer, "MAX_ESC_CUR   %5.1f ", MAX_ESC_CUR);
-            lcd_putstring(1,0, buffer);
-            sprintf(buffer, "MAX_REGEN     %5.1f ", MAX_REGEN);
-            lcd_putstring(2,0, buffer);
-            sprintf(buffer, "MAX_THR_DISP  %5.1f ", MAX_THR_DISP);
-            lcd_putstring(3,0, buffer);
-            break;
-          case 1:
-            sprintf(buffer, "MAX_THR_LOW   %5.1f ", MAX_THR_LOWSPD);
-            lcd_putstring(1,0, buffer);
-            sprintf(buffer, "LOWSPD_THRES  %5.1f ", LOWSPD_THRES);
-            lcd_putstring(2,0, buffer);
-            lcd_putstring(3,0, EROW);
-            break;
-        }
-        break;
-    }
-  }
+	uint8_t opt_index = (menu.submenu_pos + menu.submenu_items - 2) % menu.submenu_items;
+	int i;
+	for (i = 1; i < 4; i++)
+	{
+		menu_inc(&opt_index, menu.submenu_items);
+		switch (options[opt_index].type)
+		{
+		case 0:
+			len = sprintf(buffer, options[opt_index].format, *((uint8_t*)options[opt_index].value));
+			break;
+		case 1:
+			len = sprintf(buffer, options[opt_index].format, *((uint16_t*)options[opt_index].value));
+			break;
+		case 2:
+			len = sprintf(buffer, options[opt_index].format, *((uint32_t*)options[opt_index].value));
+			break;
+		case 3:
+			len = sprintf(buffer, options[opt_index].format, *((float*)options[opt_index].value));
+			break;
+		default:
+			len = sprintf(buffer, "?????");
+		}
 
-  if(btn_release_select())
-  {
-    if(MENU_SELECTED){CLR_MENU_SELECTED;}
-    else{scroll = 0;SET_MENU_SELECTED;}
-  }
+		lcd_putstring(i,0, buffer);
+		if(len<20){_lcd_padding(i,len, 20 - len);}
+	}
 
-  if(btn_release_increment())
-  {
-    if(MENU_SELECTED)
-    {
-      switch(menu.submenu_pos)
-      {
-        default:
-        case 0:
-          menu_dec(&scroll, 4);
-          break;
-        case 1:
-          break;
-        case 2:
-          menu_dec(&scroll, 3);
-          break;
-        case 3:
-          menu_dec(&scroll, 2);
-          break;
-      }
-    }
-    else{menu_dec(&menu.submenu_pos, menu.submenu_items);}
-  }
+	if (MENU_SELECTED)
+	{
+		if (btn_release_increment())
+		{
+			switch (options[menu.submenu_pos].type)
+			{
+			case 0:
+				(*((uint8_t*)options[menu.submenu_pos].value))++;
+				break;
+			case 1:
+				(*((uint16_t*)options[menu.submenu_pos].value))++;
+				break;
+			case 2:
+				(*((uint32_t*)options[menu.submenu_pos].value))++;
+				break;
+			case 3:
+				(*((float*)options[menu.submenu_pos].value)) += 0.001;
+				break;
+			}
+		}
+		else if (btn_release_decrement())
+		{
+			switch (options[menu.submenu_pos].type)
+			{
+			case 0:
+				(*((uint8_t*)options[menu.submenu_pos].value))--;
+				break;
+			case 1:
+				(*((uint16_t*)options[menu.submenu_pos].value))--;
+				break;
+			case 2:
+				(*((uint32_t*)options[menu.submenu_pos].value))--;
+				break;
+			case 3:
+				(*((float*)options[menu.submenu_pos].value)) -= 0.001;
+				break;
+			}
+		}
+		else if (btn_release_select())
+		{
+			CLR_MENU_SELECTED
+		}
+	}
+	else
+	{
+		if (btn_release_increment())
+		{
+			menu_inc(&menu.submenu_pos, menu.submenu_items);
+		}
+		else if (btn_release_decrement())
+		{
+			menu_dec(&menu.submenu_pos, menu.submenu_items);
+		}
+		else if (btn_release_select())
+		{
+			SET_MENU_SELECTED
+		}
+	}
+	/*
+	_lcd_putTitle("-OTHER-");
+	sprintf(buffer, "AUTO_SWOC       %1d   ", AUTO_SWOC);
 
-  if(btn_release_decrement())
-  {
-    if(MENU_SELECTED)
-    {
-      switch(menu.submenu_pos)
-      {
-        default:
-        case 0:
-          menu_inc(&scroll, 4);
-          break;
-        case 1:
-          break;
-        case 2:
-          menu_inc(&scroll, 3);
-          break;
-        case 3:
-          menu_inc(&scroll, 2);
-          break;
-      }
-    }
-    else{menu_inc(&menu.submenu_pos, menu.submenu_items);}
-  }
+	_lcd_putTitle("-PADDLES-");
+	sprintf(buffer, "MAX_RGN_DZ    %5.2f ", MAX_RGN_DZ);
+	sprintf(buffer, "MIN_RGN_DZ    %5.2f ", MIN_RGN_DZ);
+	sprintf(buffer, "MAX_THR_DZ    %5.2f ", MAX_THR_DZ);
+	sprintf(buffer, "MIN_THR_DZ    %5.2f ", MIN_THR_DZ);
+	sprintf(buffer, "LOW_PAD_V     %5.2f ", LOW_PAD_V);
+	sprintf(buffer, "MID_PAD_V     %5.2f ", MID_PAD_V);
+	sprintf(buffer, "HGH_PAD_V     %5.2f ", HGH_PAD_V);
+	sprintf(buffer, "ADC/V         %5.0f ", ADC_POINTS_PER_V);
+
+	_lcd_putTitle("-LIMITS-");
+	sprintf(buffer, "MAX_ESC_CUR   %5.1f ", MAX_ESC_CUR);
+	sprintf(buffer, "MAX_REGEN     %5.1f ", MAX_REGEN);
+	sprintf(buffer, "MAX_THR_DISP  %5.1f ", MAX_THR_DISP);
+	sprintf(buffer, "MAX_THR_LOW   %5.1f ", MAX_THR_LOWSPD);
+	sprintf(buffer, "LOWSPD_THRES  %5.1f ", LOWSPD_THRES);
+	*/
 }
 
 
@@ -1362,7 +1291,7 @@ void menu_comms (void) // errors[2]
     if((LPC_CAN1->GSR & (1 << 3)))  // If previous transmission is complete, send message;
     {
       can_tx2_buf.Frame = 0x00010000;  // 11-bit, no RTR, DLC is 1 byte
-      can_tx2_buf.MsgID = can_conf.dash_reply + 1;
+      can_tx2_buf.MsgID = config.dash_reply + 1;
       can_tx2_buf.DataA = 0xFF;
       can_tx2_buf.DataB = 0x0;
       can1_send_message( &can_tx2_buf );
@@ -1375,7 +1304,7 @@ void menu_comms (void) // errors[2]
     if((LPC_CAN1->GSR & (1 << 3)))  // If previous transmission is complete, send message;
     {
       can_tx2_buf.Frame = 0x00010000;  // 11-bit, no RTR, DLC is 1 byte
-      can_tx2_buf.MsgID = can_conf.dash_reply + 1;
+      can_tx2_buf.MsgID = config.dash_reply + 1;
       can_tx2_buf.DataA = 0x0;
       can_tx2_buf.DataB = 0x0;
       can1_send_message( &can_tx2_buf );
