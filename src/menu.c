@@ -616,7 +616,7 @@ void menu_battery (void)
       lcd_putstring(2,0, buffer);
       if(len<20){_lcd_padding(2, len, 20 - len);}
 
-      len = sprintf(buffer, "Status: 0x%01x", bmu.status);
+      len = sprintf(buffer, "Status: 0x%01lx", bmu.status);
       lcd_putstring(3,0, buffer);
       if(len<20){_lcd_padding(3, len, 20 - len);}
       break;
