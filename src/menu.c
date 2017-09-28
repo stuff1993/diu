@@ -1054,125 +1054,125 @@ void menu_errors (void)
  ******************************************************************************/
 void menu_options (void)
 {
-  char buffer[20];
-  int len;
-  menu.submenu_items = 3;
+	char buffer[20];
+	int len;
+	menu.submenu_items = 3;
 
-  _lcd_putTitle("-OPTIONS-");
+	_lcd_putTitle("-OPTIONS-");
 
-  if (MENU_SELECTED || (clock.blink))
-  {
-    switch(menu.submenu_pos)
-    {
-      default:
-        menu.submenu_pos = 0;
-      case 0:
-        if(STATS_BUZZER){lcd_putstring(1,0, ">> BUZZER: ON       ");}
-        else{lcd_putstring(1,0, ">> BUZZER: OFF      ");}
-        len = sprintf(buffer, "   DRIVER: %d", menu.driver);
-        lcd_putstring(2,0, buffer);
-        if(len<20){_lcd_padding(2,len, 20 - len);}
-        len = sprintf(buffer, "   PADDLES: %d", stats.paddle_mode);
-        lcd_putstring(3,0, buffer);
-        if(len<20){_lcd_padding(3,len, 20 - len);}
-        break;
-      case 1:
-        if(STATS_BUZZER){lcd_putstring(1,0, "   BUZZER: ON       ");}
-        else{lcd_putstring(1,0, "   BUZZER: OFF      ");}
-        len = sprintf(buffer, ">> DRIVER: %d", menu.driver);
-        lcd_putstring(2,0, buffer);
-        if(len<20){_lcd_padding(2,len, 20 - len);}
-        len = sprintf(buffer, "   PADDLES: %d", stats.paddle_mode);
-        lcd_putstring(3,0, buffer);
-        if(len<20){_lcd_padding(3,len, 20 - len);}
-        break;
-      case 2:
-        if(STATS_BUZZER){lcd_putstring(1,0, "   BUZZER: ON       ");}
-        else{lcd_putstring(1,0, "   BUZZER: OFF      ");}
-        len = sprintf(buffer, "   DRIVER: %d", menu.driver);
-        lcd_putstring(2,0, buffer);
-        if(len<20){_lcd_padding(2,len, 20 - len);}
-        len = sprintf(buffer, ">> PADDLES: %d", stats.paddle_mode);
-        lcd_putstring(3,0, buffer);
-        if(len<20){_lcd_padding(3,len, 20 - len);}
-        break;
-    }
-  }
-  else
-  {
-    if(STATS_BUZZER){lcd_putstring(1,0, "   BUZZER: ON       ");}
-    else{lcd_putstring(1,0, "   BUZZER: OFF      ");}
-    len = sprintf(buffer, "   DRIVER: %d", menu.driver);
-    lcd_putstring(2,0, buffer);
-    if(len<20){_lcd_padding(2,len, 20 - len);}
-    len = sprintf(buffer, "   PADDLES: %d", stats.paddle_mode);
-    lcd_putstring(3,0, buffer);
-    if(len<20){_lcd_padding(3,len, 20 - len);}
-  }
+	if (MENU_SELECTED || (clock.blink))
+	{
+		switch(menu.submenu_pos)
+		{
+		default:
+			menu.submenu_pos = 0;
+		case 0:
+			if(STATS_BUZZER){lcd_putstring(1,0, ">> BUZZER: ON       ");}
+			else{lcd_putstring(1,0, ">> BUZZER: OFF      ");}
+			len = sprintf(buffer, "   DRIVER: %d", menu.driver);
+			lcd_putstring(2,0, buffer);
+			if(len<20){_lcd_padding(2,len, 20 - len);}
+			len = sprintf(buffer, "   PADDLES: %d", stats.paddle_mode);
+			lcd_putstring(3,0, buffer);
+			if(len<20){_lcd_padding(3,len, 20 - len);}
+			break;
+		case 1:
+			if(STATS_BUZZER){lcd_putstring(1,0, "   BUZZER: ON       ");}
+			else{lcd_putstring(1,0, "   BUZZER: OFF      ");}
+			len = sprintf(buffer, ">> DRIVER: %d", menu.driver);
+			lcd_putstring(2,0, buffer);
+			if(len<20){_lcd_padding(2,len, 20 - len);}
+			len = sprintf(buffer, "   PADDLES: %d", stats.paddle_mode);
+			lcd_putstring(3,0, buffer);
+			if(len<20){_lcd_padding(3,len, 20 - len);}
+			break;
+		case 2:
+			if(STATS_BUZZER){lcd_putstring(1,0, "   BUZZER: ON       ");}
+			else{lcd_putstring(1,0, "   BUZZER: OFF      ");}
+			len = sprintf(buffer, "   DRIVER: %d", menu.driver);
+			lcd_putstring(2,0, buffer);
+			if(len<20){_lcd_padding(2,len, 20 - len);}
+			len = sprintf(buffer, ">> PADDLES: %d", stats.paddle_mode);
+			lcd_putstring(3,0, buffer);
+			if(len<20){_lcd_padding(3,len, 20 - len);}
+			break;
+		}
+	}
+	else
+	{
+		if(STATS_BUZZER){lcd_putstring(1,0, "   BUZZER: ON       ");}
+		else{lcd_putstring(1,0, "   BUZZER: OFF      ");}
+		len = sprintf(buffer, "   DRIVER: %d", menu.driver);
+		lcd_putstring(2,0, buffer);
+		if(len<20){_lcd_padding(2,len, 20 - len);}
+		len = sprintf(buffer, "   PADDLES: %d", stats.paddle_mode);
+		lcd_putstring(3,0, buffer);
+		if(len<20){_lcd_padding(3,len, 20 - len);}
+	}
 
 
-  /////////////////////////////   ACTIONS   //////////////////////////////
-  if(btn_release_select())
-  {
-    if(MENU_SELECTED)
-    {
-      switch(menu.submenu_pos)
-      {
-        case 0:
-          ee_write(ADD_BUZZ, STATS_BUZZER);
-          break;
-        case 1:
-          menu_init();
-          break;
-      }
-      CLR_MENU_SELECTED;
-    }
-    else{SET_MENU_SELECTED;}
-  }
+	/////////////////////////////   ACTIONS   //////////////////////////////
+	if(btn_release_select())
+	{
+		if(MENU_SELECTED)
+		{
+			switch(menu.submenu_pos)
+			{
+			case 0:
+				ee_write(ADD_BUZZ, STATS_BUZZER);
+				break;
+			case 1:
+				menu_init();
+				break;
+			}
+			CLR_MENU_SELECTED;
+		}
+		else{SET_MENU_SELECTED;}
+	}
 
-  if(btn_release_increment())
-  {
-    if(MENU_SELECTED)
-    {
-      switch(menu.submenu_pos)
-      {
-        case 0:
-        	TOG_STATS_BUZZER;
-          break;
-        case 1:
-          menu.driver = (menu.driver + 1) % 4;
-          break;
-        case 2:
-          stats.paddle_mode = (stats.paddle_mode + 1) % 3;
-          break;
-        default:
-          break;
-      }
-    }
-    else{menu_dec(&menu.submenu_pos, menu.submenu_items);}
-  }
+	if(btn_release_increment())
+	{
+		if(MENU_SELECTED)
+		{
+			switch(menu.submenu_pos)
+			{
+			case 0:
+				TOG_STATS_BUZZER;
+				break;
+			case 1:
+				menu.driver = (menu.driver + 1) % 4;
+				break;
+			case 2:
+				stats.paddle_mode = (stats.paddle_mode + 1) % 3;
+				break;
+			default:
+				break;
+			}
+		}
+		else{menu_dec(&menu.submenu_pos, menu.submenu_items);}
+	}
 
-  if(btn_release_decrement())
-  {
-    if(MENU_SELECTED)
-    {
-      switch(menu.submenu_pos)
-      {
-        case 0:
-        	TOG_STATS_BUZZER;
-          break;
-        case 1:
-          menu.driver = (menu.driver + 3) % 4;
-          break;
-        case 2:
-          stats.paddle_mode = (stats.paddle_mode + 2) % 3;
-          break;
-        default:
-          break;
-      }
-    }
-    else{menu_inc(&menu.submenu_pos, menu.submenu_items);}
-  }
+	if(btn_release_decrement())
+	{
+		if(MENU_SELECTED)
+		{
+			switch(menu.submenu_pos)
+			{
+			case 0:
+				TOG_STATS_BUZZER;
+				break;
+			case 1:
+				menu.driver = (menu.driver + 3) % 4;
+				break;
+			case 2:
+				stats.paddle_mode = (stats.paddle_mode + 2) % 3;
+				break;
+			default:
+				break;
+			}
+		}
+		else{menu_inc(&menu.submenu_pos, menu.submenu_items);}
+	}
 }
 
 
