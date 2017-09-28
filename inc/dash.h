@@ -133,6 +133,7 @@ void nonpersistent_load(void);
 void persistent_load(void);
 void persistent_store(void);
 void gpio_init(void);
+void led_test(void);
 void motorcontroller_init(void);
 void buzzer(uint8_t val);
 void force_buzzer(uint8_t val);

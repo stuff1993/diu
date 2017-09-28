@@ -1,6 +1,5 @@
 // TODO: Save + change CAN addresses
 // Update drive modes - DISP, TEST, HOT LAP, RACE
-// LED Test on power on
 
 // TODO: For ANU
 // Remove HV control + all shunt stuff?
@@ -1296,6 +1295,48 @@ void gpio_init(void)
 
 /******************************************************************************
  **
+ ** Function:    led_test
+ **
+ ** Description: Activates all LEDs in sequence
+ **
+ ** Parameters:  None
+ ** Return:      None
+ **
+ ******************************************************************************/
+void led_test(void)
+{
+	const uint16_t wait_time = 500;
+	REVERSE_ON
+	delayMs(1, wait_time);
+	REVERSE_OFF
+	NEUTRAL_ON
+	delayMs(1, wait_time);
+	NEUTRAL_OFF
+	REGEN_ON
+	delayMs(1, wait_time);
+	REGEN_OFF
+	SPORTS_ON
+	delayMs(1, wait_time);
+	SPORTS_OFF
+	ECO_ON
+	delayMs(1, wait_time);
+	ECO_OFF
+	BLINKER_L_ON
+	delayMs(1, wait_time);
+	BLINKER_L_OFF
+	FAULT_ON
+	delayMs(1, wait_time);
+	FAULT_OFF
+	HV_ON
+	delayMs(1, wait_time);
+	HV_OFF
+	BLINKER_R_ON
+	delayMs(1, wait_time);
+	BLINKER_R_OFF
+}
+
+/******************************************************************************
+ **
  ** Function:    motorcontroller_init
  **
  ** Description: Waits for heartbeat from motorcontroller before sending 0x502 packet
@@ -1401,6 +1442,8 @@ int main(void)
 
 	lcd_init();
 	lcd_clear();
+
+	led_test();
 
 	motorcontroller_init();
 
