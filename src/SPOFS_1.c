@@ -124,7 +124,7 @@ void SysTick_Handler(void)
 		can_tx1_buf.Frame = 0x00010000;
 		can_tx1_buf.MsgID = config.dash_reply;
 		can_tx1_buf.DataA = STATS_LEFT | (STATS_RIGHT << 1) | (STATS_BRAKE << 2) | STATS_HAZARDS | (STATS_HAZARDS << 1);
-		can_tx1_buf.DataB = 0x0;
+		can_tx1_buf.DataB = thr_pos << 16 | rgn_pos;
 		can1_send_message(&can_tx1_buf);
 	}
 
@@ -1005,6 +1005,7 @@ void main_can_handler(void)
 {
 	if(STATS_STOP)
 	{
+		CLR_STATS_STOP
 		lcd_clear();
 
 		drive.current = 0;
