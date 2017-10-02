@@ -8,12 +8,10 @@
 #define AUTO_SWOC 1 // auto reset SWOCs
 #endif
 
-#define WHEEL_D_M (0.557) // metres
-
-#define MAX_RGN_DZ        0.05  // V at pin
-#define MIN_RGN_DZ        0.05
-#define MAX_THR_DZ        0.05
-#define MIN_THR_DZ        0.05
+#define MAX_RGN_DZ        0.15  // V at pin
+#define MIN_RGN_DZ        0.15
+#define MAX_THR_DZ        0.15
+#define MIN_THR_DZ        0.15
 #define LOW_PAD_V         0.25
 #define MID_PAD_V         1.25
 #define HGH_PAD_V         2.25
