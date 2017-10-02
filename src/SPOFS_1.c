@@ -772,13 +772,22 @@ void main_drive(void)
 
 	main_paddles(ADC_A, ADC_B, &thr_pos, &rgn_pos);
 
-	if((!FORWARD || !menu.driver || STATS_DRV_MODE) && STATS_CR_STS){buzzer(10);CLR_STATS_CR_ACT;CLR_STATS_CR_STS;stats.cruise_speed = 0;} // Must be in forward or not in display mode to use cruise
-	if(rgn_pos>10 || thr_pos>10){CLR_STATS_CR_ACT;}
+	if((!FORWARD || !menu.driver || STATS_DRV_MODE) && STATS_CR_STS) // Must be in forward or not in display mode to use cruise
+	{
+		buzzer(10);
+		CLR_STATS_CR_ACT
+		CLR_STATS_CR_STS
+		stats.cruise_speed = 0;
+	}
+	if(rgn_pos || thr_pos)
+	{
+		CLR_STATS_CR_ACT
+	}
 
 
 	// DRIVE LOGIC
 	if((!MECH_BRAKE || STATS_DRV_MODE) && (FORWARD || REVERSE)){
-		if(STATS_CR_ACT)                                                                                        {drive.current = 1.0;    drive.speed_rpm = stats.cruise_speed / ((60 * 3.14 * WHEEL_D_M) / 1000.0);}
+		if(STATS_CR_ACT)                                                                                        {drive.current = 1.0;    drive.speed_rpm = stats.cruise_speed / ((60 * 3.14 * config.wheel_d) / 1000.0);}
 		else if(!thr_pos && !rgn_pos)                                                                           {drive.speed_rpm = 0;    drive.current = 0;}
 		else if(rgn_pos)                                                                                        {drive.speed_rpm = 0;    drive.current = -((float)rgn_pos / 1000.0);}
 		else if(thr_pos && drive.current < 0)                                                                   {                        drive.current = 0;}
