@@ -32,23 +32,40 @@ extern MPPT mppt1, mppt2;
 extern CAN_MSG can_tx2_buf;
 extern uint16_t thr_pos, rgn_pos;
 extern CAR_CONFIG config;
+extern DRIVER_CONFIG drv_config[];
 
-#define NUM_CONFIG 12
+#define NUM_CONFIG 27
 
 CONFIG_DISPLAY options[NUM_CONFIG] =
 {
-		{"ESC         %#05x", 1, &(config.can_esc), 0, 0x7ff},
-		{"CONTROL     %#05x", 1, &(config.can_control), 0, 0x7ff},
-		{"REPLY       %#05x", 1, &(config.can_dash_reply), 0, 0x7ff},
-		{"REQUEST     %#05x", 1, &(config.can_dash_request), 0, 0x7ff},
-		{"SHUNT       %#05x", 1, &(config.can_shunt), 0, 0x7ff},
-		{"BMU         %#05x", 1, &(config.can_bmu), 0, 0x7ff},
-		{"MPPT1       %#05x", 1, &(config.can_mppt1), 0, 0x7ff},
-		{"MPPT2       %#05x", 1, &(config.can_mppt2), 0, 0x7ff},
-		{"WHEEL d     %5.3f", 0xC0 | 3, &(config.wheel_d), 0, 0},
-		{"MAX RGN     %04u", 0xC0 | 1, &(config.max_rgn), 0, 1000},
-		{"MAX THR LOW %04u", 0xC0 | 1, &(config.max_thr_lowspd), 0, 1000},
-		{"LOW SPD     %03u", 0xC0 | 0, &(config.low_spd_threshold), 0, 0}
+		{"ESC          %#05x", 1, &(config.can_esc), 0, 0x7ff},
+		{"CONTROL      %#05x", 1, &(config.can_control), 0, 0x7ff},
+		{"REPLY        %#05x", 1, &(config.can_dash_reply), 0, 0x7ff},
+		{"REQUEST      %#05x", 1, &(config.can_dash_request), 0, 0x7ff},
+		{"SHUNT        %#05x", 1, &(config.can_shunt), 0, 0x7ff},
+		{"BMU          %#05x", 1, &(config.can_bmu), 0, 0x7ff},
+		{"MPPT1        %#05x", 1, &(config.can_mppt1), 0, 0x7ff},
+		{"MPPT2        %#05x", 1, &(config.can_mppt2), 0, 0x7ff},
+		{"WHEEL d      %5.3f", 0x80 | 3, &(config.wheel_d), 0, 0},
+		{"MAX THR LOW  %04u", 1, &(config.max_thr_lowspd), 0, 1000},
+		{"LOW SPD      %03u", 0x80 | 0, &(config.low_spd_threshold), 0, 0},
+		{"DRV0 MAX THR %04u", 1, &(drv_config[0].max_throttle), 0, 1000},
+		{"DRV0 MAX RGN %04u", 1, &(drv_config[0].max_regen), 0, 1000},
+		{"DRV0 THR RMP %04u", 1, &(drv_config[0].throttle_ramp_rate), 0, 1000},
+		{"DRV0 RGN RMP %04u", 1, &(drv_config[0].regen_ramp_rate), 0, 1000},
+		{"DRV1 MAX THR %04u", 1, &(drv_config[1].max_throttle), 0, 1000},
+		{"DRV1 MAX RGN %04u", 1, &(drv_config[1].max_regen), 0, 1000},
+		{"DRV1 THR RMP %04u", 1, &(drv_config[1].throttle_ramp_rate), 0, 1000},
+		{"DRV1 RGN RMP %04u", 1, &(drv_config[1].regen_ramp_rate), 0, 1000},
+		{"DRV2 MAX THR %04u", 1, &(drv_config[2].max_throttle), 0, 1000},
+		{"DRV2 MAX RGN %04u", 1, &(drv_config[2].max_regen), 0, 1000},
+		{"DRV2 THR RMP %04u", 1, &(drv_config[2].throttle_ramp_rate), 0, 1000},
+		{"DRV2 RGN RMP %04u", 1, &(drv_config[2].regen_ramp_rate), 0, 1000},
+		{"DRV3 MAX THR %04u", 1, &(drv_config[3].max_throttle), 0, 1000},
+		{"DRV3 MAX RGN %04u", 1, &(drv_config[3].max_regen), 0, 1000},
+		{"DRV3 THR RMP %04u", 1, &(drv_config[3].throttle_ramp_rate), 0, 1000},
+		{"DRV3 RGN RMP %04u", 1, &(drv_config[3].regen_ramp_rate), 0, 1000}
+
 };
 
 
@@ -859,36 +876,36 @@ void menu_config (void)
 		{
 			switch (options[menu.submenu_pos].type & 0xBF)
 			{
-			case 128:
+			case 0:
 				if ((*((uint8_t*)options[menu.submenu_pos].value)) >= options[menu.submenu_pos].upper_bound)
 				{
 					break;
 				}
-			case 0:
+			case 128:
 				(*((uint8_t*)options[menu.submenu_pos].value))++;
 				break;
-			case 129:
+			case 1:
 				if ((*((uint16_t*)options[menu.submenu_pos].value)) >= options[menu.submenu_pos].upper_bound)
 				{
 					break;
 				}
-			case 1:
+			case 129:
 				(*((uint16_t*)options[menu.submenu_pos].value))++;
 				break;
-			case 130:
+			case 2:
 				if ((*((uint32_t*)options[menu.submenu_pos].value)) >= options[menu.submenu_pos].upper_bound)
 				{
 					break;
 				}
-			case 2:
+			case 130:
 				(*((uint32_t*)options[menu.submenu_pos].value))++;
 				break;
-			case 131:
+			case 3:
 				if ((*((float*)options[menu.submenu_pos].value)) >= options[menu.submenu_pos].upper_bound)
 				{
 					break;
 				}
-			case 3:
+			case 131:
 				(*((float*)options[menu.submenu_pos].value)) += 0.001;
 				break;
 			}
@@ -897,42 +914,43 @@ void menu_config (void)
 		{
 			switch (options[menu.submenu_pos].type & 0x7F)
 			{
-			case 64:
+			case 0:
 				if ((*((uint8_t*)options[menu.submenu_pos].value)) <= options[menu.submenu_pos].lower_bound)
 				{
 					break;
 				}
-			case 0:
+			case 64:
 				(*((uint8_t*)options[menu.submenu_pos].value))--;
 				break;
-			case 65:
+			case 1:
 				if ((*((uint16_t*)options[menu.submenu_pos].value)) <= options[menu.submenu_pos].lower_bound)
 				{
 					break;
 				}
-			case 1:
+			case 65:
 				(*((uint16_t*)options[menu.submenu_pos].value))--;
 				break;
-			case 66:
+			case 2:
 				if ((*((uint32_t*)options[menu.submenu_pos].value)) <= options[menu.submenu_pos].lower_bound)
 				{
 					break;
 				}
-			case 2:
+			case 66:
 				(*((uint32_t*)options[menu.submenu_pos].value))--;
 				break;
-			case 67:
+			case 3:
 				if ((*((float*)options[menu.submenu_pos].value)) <= options[menu.submenu_pos].lower_bound)
 				{
 					break;
 				}
-			case 3:
+			case 67:
 				(*((float*)options[menu.submenu_pos].value)) -= 0.001;
 				break;
 			}
 		}
 		else if (btn_release_select())
 		{
+			SET_STATS_CONF_CHANGED
 			CLR_MENU_SELECTED
 		}
 	}

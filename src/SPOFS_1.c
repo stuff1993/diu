@@ -1159,14 +1159,23 @@ void persistent_load(void)
 	mppt1.watt_hrs = conv_uint_float(ee_read(ADD_MPPT1WHR));
 	mppt2.watt_hrs = conv_uint_float(ee_read(ADD_MPPT2WHR));
 
-	uint32_t *conf_add = (uint32_t *)(&(config.can_esc));
+	uint32_t *conf_add = (uint32_t *)(&(config));
 	*conf_add++ = ee_read(ADD_CONF1);
 	*conf_add++ = ee_read(ADD_CONF2);
 	*conf_add++ = ee_read(ADD_CONF3);
 	*conf_add++ = ee_read(ADD_CONF4);
 	*conf_add++ = ee_read(ADD_CONF5);
-	*conf_add++ = ee_read(ADD_CONF6);
-	*conf_add = ee_read(ADD_CONF7);
+	*conf_add = ee_read(ADD_CONF6);
+
+	conf_add = (uint32_t *)(&drv_config);
+	*conf_add++ = ee_read(ADD_DRV0_CONF1);
+	*conf_add++ = ee_read(ADD_DRV0_CONF2);
+	*conf_add++ = ee_read(ADD_DRV1_CONF1);
+	*conf_add++ = ee_read(ADD_DRV1_CONF2);
+	*conf_add++ = ee_read(ADD_DRV2_CONF1);
+	*conf_add++ = ee_read(ADD_DRV2_CONF2);
+	*conf_add++ = ee_read(ADD_DRV3_CONF1);
+	*conf_add = ee_read(ADD_DRV3_CONF2);
 
 	if (isnan(stats.odometer))
 	{
