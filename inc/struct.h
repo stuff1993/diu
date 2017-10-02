@@ -380,22 +380,41 @@ typedef struct SHUNT_STRUCT
 
 typedef struct CAR_CONFIG_STRUCT
 {
-	uint16_t esc;
-	uint16_t control;
-	uint16_t dash_reply;
-	uint16_t dash_request;
-	uint16_t shunt;
-	uint16_t bmu;
-	uint16_t mppt1;
-	uint16_t mppt2;
-	float wheel_d;
+	// CAN Addresses
+	uint16_t can_esc;
+	uint16_t can_control;
+	uint16_t can_dash_reply;
+	uint16_t can_dash_request;
+	uint16_t can_shunt;
+	uint16_t can_bmu;
+	uint16_t can_mppt1;
+	uint16_t can_mppt2;
+
+	float wheel_d; // Wheel d in m
+	uint16_t max_rgn; // Maximum available regen - 0 to 1000 (0% to 100%)
+	uint16_t max_thr_lowspd; // Maximum available throttle under LOWSPD_THRES - 0 - 1000 (0% - 100%)
+	uint8_t low_spd_threshold; // Threshold speed for low speed throttle cap
 } CAR_CONFIG;
 
 typedef struct CONFIG_DISPLAY_STRUCT
 {
 	char format[30];
-	uint8_t type; // 0 - uint8, 1 uint16, 2 uint32, 3 float
+	/*
+	 * Type codes
+	 * 0 uint8
+	 * 1 uint16
+	 * 2 uint32
+	 * 3 float(0.001)
+	 *
+	 * + 128 - no upper bound
+	 * + 64 - no lower bound
+	 *
+	 * TODO - 4 float(0.01), 5 float(0.1), 6 float(1)
+	 */
+	uint8_t type;
 	void *value;
+	float lower_bound;
+	float upper_bound;
 } CONFIG_DISPLAY;
 
 #endif /* STRUCT_H_ */

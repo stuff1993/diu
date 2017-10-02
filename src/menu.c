@@ -33,17 +33,22 @@ extern CAN_MSG can_tx2_buf;
 extern uint16_t thr_pos, rgn_pos;
 extern CAR_CONFIG config;
 
-CONFIG_DISPLAY options[9] =
+#define NUM_CONFIG 12
+
+CONFIG_DISPLAY options[NUM_CONFIG] =
 {
-		{"ESC     %#05x", 1, &(config.esc)},
-		{"CONTROL %#05x", 1, &(config.control)},
-		{"REPLY   %#05x", 1, &(config.dash_reply)},
-		{"REQUEST %#05x", 1, &(config.dash_request)},
-		{"SHUNT   %#05x", 1, &(config.shunt)},
-		{"BMU     %#05x", 1, &(config.bmu)},
-		{"MPPT1   %#05x", 1, &(config.mppt1)},
-		{"MPPT2   %#05x", 1, &(config.mppt2)},
-		{"WHEEL d %5.3f", 3, &(config.wheel_d)}
+		{"ESC         %#05x", 1, &(config.can_esc), 0, 0x7ff},
+		{"CONTROL     %#05x", 1, &(config.can_control), 0, 0x7ff},
+		{"REPLY       %#05x", 1, &(config.can_dash_reply), 0, 0x7ff},
+		{"REQUEST     %#05x", 1, &(config.can_dash_request), 0, 0x7ff},
+		{"SHUNT       %#05x", 1, &(config.can_shunt), 0, 0x7ff},
+		{"BMU         %#05x", 1, &(config.can_bmu), 0, 0x7ff},
+		{"MPPT1       %#05x", 1, &(config.can_mppt1), 0, 0x7ff},
+		{"MPPT2       %#05x", 1, &(config.can_mppt2), 0, 0x7ff},
+		{"WHEEL d     %5.3f", 0xC0 | 3, &(config.wheel_d), 0, 0},
+		{"MAX RGN     %04u", 0xC0 | 1, &(config.max_rgn), 0, 1000},
+		{"MAX THR LOW %04u", 0xC0 | 1, &(config.max_thr_lowspd), 0, 1000},
+		{"LOW SPD     %03u", 0xC0 | 0, &(config.low_spd_threshold), 0, 0}
 };
 
 
@@ -817,7 +822,7 @@ void menu_config (void)
 {
 	char buffer[20];
 	int len;
-	menu.submenu_items = 9;
+	menu.submenu_items = NUM_CONFIG;
 
 	_lcd_putTitle("-CONFIG-");
 
@@ -826,7 +831,7 @@ void menu_config (void)
 	for (i = 1; i < 4; i++)
 	{
 		menu_inc(&opt_index, menu.submenu_items);
-		switch (options[opt_index].type)
+		switch (options[opt_index].type & 0x3F)
 		{
 		case 0:
 			len = sprintf(buffer, options[opt_index].format, *((uint8_t*)options[opt_index].value));
@@ -852,17 +857,37 @@ void menu_config (void)
 	{
 		if (btn_release_increment())
 		{
-			switch (options[menu.submenu_pos].type)
+			switch (options[menu.submenu_pos].type & 0xBF)
 			{
+			case 128:
+				if ((*((uint8_t*)options[menu.submenu_pos].value)) >= options[menu.submenu_pos].upper_bound)
+				{
+					break;
+				}
 			case 0:
 				(*((uint8_t*)options[menu.submenu_pos].value))++;
 				break;
+			case 129:
+				if ((*((uint16_t*)options[menu.submenu_pos].value)) >= options[menu.submenu_pos].upper_bound)
+				{
+					break;
+				}
 			case 1:
 				(*((uint16_t*)options[menu.submenu_pos].value))++;
 				break;
+			case 130:
+				if ((*((uint32_t*)options[menu.submenu_pos].value)) >= options[menu.submenu_pos].upper_bound)
+				{
+					break;
+				}
 			case 2:
 				(*((uint32_t*)options[menu.submenu_pos].value))++;
 				break;
+			case 131:
+				if ((*((float*)options[menu.submenu_pos].value)) >= options[menu.submenu_pos].upper_bound)
+				{
+					break;
+				}
 			case 3:
 				(*((float*)options[menu.submenu_pos].value)) += 0.001;
 				break;
@@ -870,17 +895,37 @@ void menu_config (void)
 		}
 		else if (btn_release_decrement())
 		{
-			switch (options[menu.submenu_pos].type)
+			switch (options[menu.submenu_pos].type & 0x7F)
 			{
+			case 64:
+				if ((*((uint8_t*)options[menu.submenu_pos].value)) <= options[menu.submenu_pos].lower_bound)
+				{
+					break;
+				}
 			case 0:
 				(*((uint8_t*)options[menu.submenu_pos].value))--;
 				break;
+			case 65:
+				if ((*((uint16_t*)options[menu.submenu_pos].value)) <= options[menu.submenu_pos].lower_bound)
+				{
+					break;
+				}
 			case 1:
 				(*((uint16_t*)options[menu.submenu_pos].value))--;
 				break;
+			case 66:
+				if ((*((uint32_t*)options[menu.submenu_pos].value)) <= options[menu.submenu_pos].lower_bound)
+				{
+					break;
+				}
 			case 2:
 				(*((uint32_t*)options[menu.submenu_pos].value))--;
 				break;
+			case 67:
+				if ((*((float*)options[menu.submenu_pos].value)) <= options[menu.submenu_pos].lower_bound)
+				{
+					break;
+				}
 			case 3:
 				(*((float*)options[menu.submenu_pos].value)) -= 0.001;
 				break;
@@ -1291,7 +1336,7 @@ void menu_comms (void) // errors[2]
     if((LPC_CAN1->GSR & (1 << 3)))  // If previous transmission is complete, send message;
     {
       can_tx2_buf.Frame = 0x00010000;  // 11-bit, no RTR, DLC is 1 byte
-      can_tx2_buf.MsgID = config.dash_reply + 1;
+      can_tx2_buf.MsgID = config.can_dash_reply + 1;
       can_tx2_buf.DataA = 0xFF;
       can_tx2_buf.DataB = 0x0;
       can1_send_message( &can_tx2_buf );
@@ -1304,7 +1349,7 @@ void menu_comms (void) // errors[2]
     if((LPC_CAN1->GSR & (1 << 3)))  // If previous transmission is complete, send message;
     {
       can_tx2_buf.Frame = 0x00010000;  // 11-bit, no RTR, DLC is 1 byte
-      can_tx2_buf.MsgID = config.dash_reply + 1;
+      can_tx2_buf.MsgID = config.can_dash_reply + 1;
       can_tx2_buf.DataA = 0x0;
       can_tx2_buf.DataB = 0x0;
       can1_send_message( &can_tx2_buf );

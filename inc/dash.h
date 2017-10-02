@@ -25,10 +25,7 @@
 
 #define MAX_ESC_CUR         65.0  // Amps
 
-#define MAX_REGEN           350.0 // Maximum available regen - 0 to 1000 (0% to 100%)
-#define MAX_THR_DISP        600.0 // Maximum available throttle in display mode - 0 - 1000 (0% - 100%)
-#define MAX_THR_LOWSPD      750.0 // Maximum available throttle under LOWSPD_THRES - 0 - 1000 (0% - 100%)
-#define LOWSPD_THRES        20.0  // Threshold speed for low speed throttle cap
+#define MAX_THR_DISP        750.0 // Maximum available throttle in display mode - 0 - 1000 (0% - 100%)
 
 #define IIR_GAIN_ELECTRICAL 1000
 #define IIR_GAIN_THERMAL    10
@@ -117,6 +114,8 @@
 #define ADD_CONF3    8
 #define ADD_CONF4    9
 #define ADD_CONF5    10
+#define ADD_CONF6    11
+#define ADD_CONF7    12
 
 // Function Prototypes
 void main_driver_check(void);

@@ -31,7 +31,7 @@
 
 
 CAR_CONFIG config =
-{ 0x400, 0x500, 0x510, 0x520, 0x530, 0x600, 0x716, 0x719, 0.557f };
+{ 0x400, 0x500, 0x510, 0x520, 0x530, 0x600, 0x716, 0x719, 0.557f, 1000, 750, 20 };
 
 MPPT mppt1 =
 { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -101,7 +101,7 @@ void SysTick_Handler(void)
 	if ((!(clock.t_ms % 10)) && STATS_ARMED)
 	{
 		can_tx1_buf.Frame = 0x00080000;
-		can_tx1_buf.MsgID = config.control + 1;
+		can_tx1_buf.MsgID = config.can_control + 1;
 		can_tx1_buf.DataA = conv_float_uint(drive.speed_rpm);
 		if (drive.current < 0)
 		{
@@ -121,9 +121,9 @@ void SysTick_Handler(void)
 
 		// Light control message
 		// If hazards, set both left and right
-		can_tx1_buf.Frame = 0x00010000;
-		can_tx1_buf.MsgID = config.dash_reply;
-		can_tx1_buf.DataA = STATS_LEFT | (STATS_RIGHT << 1) | (STATS_BRAKE << 2) | STATS_HAZARDS | (STATS_HAZARDS << 1);
+		can_tx1_buf.Frame = 0x00080000;
+		can_tx1_buf.MsgID = config.can_dash_reply;
+		can_tx1_buf.DataA = STATS_LEFT | (STATS_RIGHT << 1) | (STATS_BRAKE << 2) | (MECH_BRAKE << 3) | STATS_HAZARDS | (STATS_HAZARDS << 1);
 		can_tx1_buf.DataB = thr_pos << 16 | rgn_pos;
 		can1_send_message(&can_tx1_buf);
 	}
@@ -183,7 +183,7 @@ void SysTick_Handler(void)
 		// CAN transceiver seems to struggle to send these and the drive packets above, so only send one at a time.
 		can_tx1_buf.Frame = 0x00080000;
 		if (clock.t_s % 2) {
-			can_tx1_buf.MsgID = config.dash_reply + 3;
+			can_tx1_buf.MsgID = config.can_dash_reply + 3;
 			if (stats.avg_power_counter)
 			{
 				can_tx1_buf.DataA = conv_float_uint(esc.avg_power / stats.avg_power_counter);
@@ -199,7 +199,7 @@ void SysTick_Handler(void)
 		{
 			if (stats.avg_power_counter)
 			{
-				can_tx1_buf.MsgID = config.dash_reply + 4;
+				can_tx1_buf.MsgID = config.can_dash_reply + 4;
 				can_tx1_buf.DataA = conv_float_uint(mppt1.avg_power / stats.avg_power_counter);
 				can_tx1_buf.DataB = conv_float_uint(mppt2.avg_power / stats.avg_power_counter);
 				can1_send_message(&can_tx1_buf);
@@ -296,28 +296,28 @@ void main_mppt_poll(void)
  ******************************************************************************/
 void can1_unpack(CAN_MSG *_msg)
 {
-	if (_msg->MsgID >= config.esc && _msg->MsgID <= config.esc + 23)
+	if (_msg->MsgID >= config.can_esc && _msg->MsgID <= config.can_esc + 23)
 	{
 		esc_data_extract(&esc, _msg);
 	}
-	else if (_msg->MsgID >= config.dash_request && _msg->MsgID <= config.dash_request + 1)
+	else if (_msg->MsgID >= config.can_dash_request && _msg->MsgID <= config.can_dash_request + 1)
 	{
 		dash_data_extract(_msg);
 	}
-	else if (_msg->MsgID >= config.shunt && _msg->MsgID <= config.shunt + 1)
+	else if (_msg->MsgID >= config.can_shunt && _msg->MsgID <= config.can_shunt + 1)
 	{
 		shunt_data_extract(&shunt, _msg);
 	}
-	else if (_msg->MsgID >= (config.bmu + BMU_INFO + 4) && _msg->MsgID <= (config.bmu + BMU_INFO + 9))
+	else if (_msg->MsgID >= (config.can_bmu + BMU_INFO + 4) && _msg->MsgID <= (config.can_bmu + BMU_INFO + 9))
 	{
 		bmu_data_extract(&bmu, _msg);
 	}
-	else if (_msg->MsgID == config.mppt1 + MPPT_RPLY)
+	else if (_msg->MsgID == config.can_mppt1 + MPPT_RPLY)
 	{
 		mppt_data_extract(&mppt1, _msg);
 		//extractMPPT1DATA();
 	}
-	else if (_msg->MsgID == config.mppt2 + MPPT_RPLY)
+	else if (_msg->MsgID == config.can_mppt2 + MPPT_RPLY)
 	{
 		mppt_data_extract(&mppt2, _msg);
 		//extractMPPT2DATA();
@@ -470,7 +470,7 @@ void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg)
  ******************************************************************************/
 void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
 {
-	uint16_t id_offset = _msg->MsgID - config.esc;
+	uint16_t id_offset = _msg->MsgID - config.can_esc;
 
 	switch (id_offset)
 	{
@@ -516,7 +516,7 @@ void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
  ******************************************************************************/
 void dash_data_extract(CAN_MSG *_msg)
 {
-	uint16_t id_offset = _msg->MsgID - config.dash_request;
+	uint16_t id_offset = _msg->MsgID - config.can_dash_request;
 
 	switch (id_offset)
 	{
@@ -545,7 +545,7 @@ void dash_data_extract(CAN_MSG *_msg)
  ******************************************************************************/
 void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
 {
-	uint16_t id_offset = _msg->MsgID - config.shunt;
+	uint16_t id_offset = _msg->MsgID - config.can_shunt;
 
 	switch (id_offset)
 	{
@@ -592,7 +592,7 @@ void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
  ******************************************************************************/
 void bmu_data_extract(BMU *_bmu, CAN_MSG *_msg)
 {
-	uint16_t id_offset = _msg->MsgID - config.bmu;
+	uint16_t id_offset = _msg->MsgID - config.can_bmu;
 
 	switch (id_offset)
 	{
@@ -679,7 +679,7 @@ void main_input_check(void)
 			if((LPC_CAN1->GSR & (1 << 3)))  // Check Global Status Register
 			{
 				can_tx1_buf.Frame = 0x00010000; // 11-bit, no RTR, DLC is 1 byte
-				can_tx1_buf.MsgID = config.dash_reply + 1;
+				can_tx1_buf.MsgID = config.can_dash_reply + 1;
 				can_tx1_buf.DataA = 0x0;
 				can_tx1_buf.DataB = 0x0;
 				can1_send_message(&can_tx1_buf);
@@ -814,14 +814,14 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 		// Throttle - Paddle 1
 		_pad1 = (_pad1 < ((MID_PAD_V + MIN_THR_DZ) * ADC_POINTS_PER_V)) ? 0 : _pad1 - ((MID_PAD_V + MIN_THR_DZ) * ADC_POINTS_PER_V);
 		_pad1 = (_pad1 * 1000) / (((HGH_PAD_V - MAX_THR_DZ) - (MID_PAD_V + MIN_THR_DZ)) * ADC_POINTS_PER_V);
-		if(esc.velocity_kmh < LOWSPD_THRES && _pad1 > MAX_THR_LOWSPD){_pad1 = MAX_THR_LOWSPD;}
+		if(esc.velocity_kmh < config.low_spd_threshold && _pad1 > config.max_thr_lowspd){_pad1 = config.max_thr_lowspd;}
 		if(!menu.driver && _pad1 > MAX_THR_DISP){_pad1 = MAX_THR_DISP;}
 		if(_pad1>1000){_pad1=1000;}
 		// Regen - Paddle 2
 		_pad2 = (_pad2 < ((MID_PAD_V + MIN_RGN_DZ) * ADC_POINTS_PER_V)) ? 0 : _pad2 - ((MID_PAD_V + MIN_RGN_DZ) * ADC_POINTS_PER_V);
 		_pad2 = (_pad2 * 1000) / (((HGH_PAD_V - MAX_RGN_DZ) - (MID_PAD_V + MIN_RGN_DZ)) * ADC_POINTS_PER_V);
 		if(_pad2>1000){_pad2=1000;}
-		_pad2 *= MAX_REGEN / 1000.0;
+		_pad2 *= config.max_rgn / 1000.0;
 
 		*_thr = _pad1;
 		*_rgn = _pad2;
@@ -832,7 +832,7 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 		{
 			_pad1 -= ((MID_PAD_V + MIN_THR_DZ) * ADC_POINTS_PER_V);
 			_pad1 = (_pad1 * 1000) / (((HGH_PAD_V - MAX_THR_DZ) - (MID_PAD_V + MIN_THR_DZ)) * ADC_POINTS_PER_V);
-			if(esc.velocity_kmh < LOWSPD_THRES && _pad1 > MAX_THR_LOWSPD){_pad1 = MAX_THR_LOWSPD;}
+			if(esc.velocity_kmh < config.low_spd_threshold && _pad1 > config.max_thr_lowspd){_pad1 = config.max_thr_lowspd;}
 			if(!menu.driver && _pad1 > MAX_THR_DISP){_pad1 = MAX_THR_DISP;}
 			if(_pad1>1000){_pad1=1000;}
 
@@ -844,7 +844,7 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 			_pad1 = ((MID_PAD_V - MIN_RGN_DZ) * ADC_POINTS_PER_V) - _pad1;
 			_pad1 = (_pad1 * 1000) / (((MID_PAD_V - MIN_RGN_DZ) - (LOW_PAD_V + MAX_THR_DZ)) * ADC_POINTS_PER_V);
 			if(_pad1>1000){_pad1=1000;}
-			_pad1 *= MAX_REGEN / 1000.0;
+			_pad1 *= config.max_rgn / 1000.0;
 
 			*_thr = 0;
 			*_rgn = _pad1;
@@ -857,7 +857,7 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 			_pad1 = ((MID_PAD_V - MIN_RGN_DZ) * ADC_POINTS_PER_V) - _pad1;
 			_pad1 = (_pad1 * 1000) / (((MID_PAD_V - MIN_RGN_DZ) - (LOW_PAD_V + MAX_THR_DZ)) * ADC_POINTS_PER_V);
 			if(_pad1>1000){_pad1=1000;}
-			_pad1 *= MAX_REGEN / 1000.0;
+			_pad1 *= config.max_rgn / 1000.0;
 
 			*_thr = 0;
 			*_rgn = _pad1;
@@ -867,7 +867,7 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 			_pad2 = ((MID_PAD_V - MIN_RGN_DZ) * ADC_POINTS_PER_V) - _pad2;
 			_pad2 = (_pad2 * 1000) / (((MID_PAD_V - MIN_RGN_DZ) - (LOW_PAD_V + MAX_THR_DZ)) * ADC_POINTS_PER_V);
 			if(_pad2>1000){_pad2=1000;}
-			_pad2 *= MAX_REGEN / 1000.0;
+			_pad2 *= config.max_rgn / 1000.0;
 
 			*_thr = 0;
 			*_rgn = _pad2;
@@ -877,7 +877,7 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 			_pad1 -= ((MID_PAD_V + MIN_THR_DZ) * ADC_POINTS_PER_V);
 			_pad1 = (_pad1 * 1000) / (((HGH_PAD_V - MAX_THR_DZ) - (MID_PAD_V + MIN_THR_DZ)) * ADC_POINTS_PER_V);
 
-			if(esc.velocity_kmh < LOWSPD_THRES && _pad1 > MAX_THR_LOWSPD){_pad1 = MAX_THR_LOWSPD;}
+			if(esc.velocity_kmh < config.low_spd_threshold && _pad1 > config.max_thr_lowspd){_pad1 = config.max_thr_lowspd;}
 			if(!menu.driver && _pad1 > MAX_THR_DISP){_pad1 = MAX_THR_DISP;}
 			if(_pad1>1000){_pad1=1000;}
 
@@ -889,7 +889,7 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 			_pad2 -= ((MID_PAD_V + MIN_THR_DZ) * ADC_POINTS_PER_V);
 			_pad2 = (_pad2 * 1000) / (((HGH_PAD_V - MAX_THR_DZ) - (MID_PAD_V + MIN_THR_DZ)) * ADC_POINTS_PER_V);
 
-			if(esc.velocity_kmh < LOWSPD_THRES && _pad2 > MAX_THR_LOWSPD){_pad2 = MAX_THR_LOWSPD;}
+			if(esc.velocity_kmh < config.low_spd_threshold && _pad2 > config.max_thr_lowspd){_pad2 = config.max_thr_lowspd;}
 			if(!menu.driver && _pad2 > MAX_THR_DISP){_pad2 = MAX_THR_DISP;}
 			if(_pad2>1000){_pad2=1000;}
 
@@ -1120,7 +1120,7 @@ void esc_reset(void)
 	// see WS22 user manual and Tritium CAN network specs
 	// TODO: try MC + 25 (0x19) + msg "RESETWS" (TRI88.004 ver3 doc, July 2013) - 2015
 	can_tx2_buf.Frame = 0x00080000;  // 11-bit, no RTR, DLC is 1 byte
-	can_tx2_buf.MsgID = config.control + 3;
+	can_tx2_buf.MsgID = config.can_control + 3;
 	can_tx2_buf.DataA = 0x0;
 	can_tx2_buf.DataB = 0x0;
 	can1_send_message(&can_tx2_buf);
@@ -1145,12 +1145,14 @@ void persistent_load(void)
 	mppt1.watt_hrs = conv_uint_float(ee_read(ADD_MPPT1WHR));
 	mppt2.watt_hrs = conv_uint_float(ee_read(ADD_MPPT2WHR));
 
-	uint32_t *conf_add = (uint32_t *)(&(config.esc));
+	uint32_t *conf_add = (uint32_t *)(&(config.can_esc));
 	*conf_add++ = ee_read(ADD_CONF1);
 	*conf_add++ = ee_read(ADD_CONF2);
 	*conf_add++ = ee_read(ADD_CONF3);
 	*conf_add++ = ee_read(ADD_CONF4);
-	*conf_add = ee_read(ADD_CONF5);
+	*conf_add++ = ee_read(ADD_CONF5);
+	*conf_add++ = ee_read(ADD_CONF6);
+	*conf_add = ee_read(ADD_CONF7);
 
 	if (isnan(stats.odometer))
 	{
@@ -1195,12 +1197,14 @@ void persistent_store(void)
 		break;
 	case 2:
 		;
-		uint32_t *conf_add = (uint32_t *)(&(config.esc));
+		uint32_t *conf_add = (uint32_t *)(&(config.can_esc));
 		ee_write(ADD_CONF1, *conf_add++);
 		ee_write(ADD_CONF2, *conf_add++);
 		ee_write(ADD_CONF3, *conf_add++);
 		ee_write(ADD_CONF4, *conf_add++);
-		ee_write(ADD_CONF5, *conf_add);
+		ee_write(ADD_CONF5, *conf_add++);
+		ee_write(ADD_CONF6, *conf_add++);
+		ee_write(ADD_CONF7, *conf_add);
 		break;
 	}
 }
@@ -1371,7 +1375,7 @@ void motorcontroller_init(void)
 
 	}
 	can_tx1_buf.Frame = 0x00080000;
-	can_tx1_buf.MsgID = config.control + 2;
+	can_tx1_buf.MsgID = config.can_control + 2;
 	can_tx1_buf.DataA = 0x0;
 	can_tx1_buf.DataB = conv_float_uint(1);
 	force_buzzer(20);
