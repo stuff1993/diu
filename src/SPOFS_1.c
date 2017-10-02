@@ -31,7 +31,15 @@
 
 
 CAR_CONFIG config =
-{ 0x400, 0x500, 0x510, 0x520, 0x530, 0x600, 0x716, 0x719, 0.557f, 1000, 750, 20 };
+{ 0x400, 0x500, 0x510, 0x520, 0x530, 0x600, 0x716, 0x719, 0.557f, 750, 20 };
+
+DRIVER_CONFIG drv_config[4] =
+{
+		{ 1000, 1000, 10, 30 }, // Race
+		{ 1000, 1000, 30, 30 }, // Hot Lap
+		{ 1000, 1000, 10, 30 }, // Test
+		{ 750,  750,  5,  30 }  // Display
+};
 
 MPPT mppt1 =
 { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -693,9 +701,6 @@ void main_input_check(void)
 		CLR_MENU_SELECTED
 	}
 
-	if(SWITCH_IO & 0x4){SET_STATS_DRV_MODE;stats.ramp_speed = SPORTS_RAMP_SPEED;}
-	else               {CLR_STATS_DRV_MODE;stats.ramp_speed = ECONOMY_RAMP_SPEED;}
-
 	if (swt_cruise() & 0x0C)
 	{
 		TOG_STATS_HAZARDS
@@ -791,9 +796,9 @@ void main_drive(void)
 		else if(!thr_pos && !rgn_pos)                                                                           {drive.speed_rpm = 0;    drive.current = 0;}
 		else if(rgn_pos)                                                                                        {drive.speed_rpm = 0;    drive.current = -((float)rgn_pos / 1000.0);}
 		else if(thr_pos && drive.current < 0)                                                                   {                        drive.current = 0;}
-		else if(FORWARD && esc.velocity_kmh > -5.0 && (((drive.current * 1000) + stats.ramp_speed) < thr_pos))  {drive.speed_rpm = 1500; drive.current += (stats.ramp_speed / 1000.0);}
+		else if(FORWARD && esc.velocity_kmh > -5.0 && (((drive.current * 1000) + drv_config[menu.driver].throttle_ramp_rate) < thr_pos))  {drive.speed_rpm = 1500; drive.current += (drv_config[menu.driver].throttle_ramp_rate / 1000.0);}
 		else if(FORWARD && esc.velocity_kmh > -5.0)                                                             {drive.speed_rpm = 1500; drive.current = (thr_pos / 1000.0);}
-		else if(REVERSE && esc.velocity_kmh <  1.0 && (((drive.current * 1000) + stats.ramp_speed) < thr_pos))  {drive.speed_rpm = -200; drive.current += (stats.ramp_speed / 1000.0);}
+		else if(REVERSE && esc.velocity_kmh <  1.0 && (((drive.current * 1000) + drv_config[menu.driver].throttle_ramp_rate) < thr_pos))  {drive.speed_rpm = -200; drive.current += (drv_config[menu.driver].throttle_ramp_rate / 1000.0);}
 		else if(REVERSE && esc.velocity_kmh <  1.0)                                                             {drive.speed_rpm = -200; drive.current = (thr_pos / 1000.0);}
 		else{drive.speed_rpm = 0; drive.current = 0;}}
 	else if(rgn_pos)                                                                                        	{drive.speed_rpm = 0;    drive.current = -((float)rgn_pos / 1000.0);}
@@ -824,13 +829,13 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 		_pad1 = (_pad1 < ((MID_PAD_V + MIN_THR_DZ) * ADC_POINTS_PER_V)) ? 0 : _pad1 - ((MID_PAD_V + MIN_THR_DZ) * ADC_POINTS_PER_V);
 		_pad1 = (_pad1 * 1000) / (((HGH_PAD_V - MAX_THR_DZ) - (MID_PAD_V + MIN_THR_DZ)) * ADC_POINTS_PER_V);
 		if(esc.velocity_kmh < config.low_spd_threshold && _pad1 > config.max_thr_lowspd){_pad1 = config.max_thr_lowspd;}
-		if(!menu.driver && _pad1 > MAX_THR_DISP){_pad1 = MAX_THR_DISP;}
+		if(_pad1 > drv_config[menu.driver].max_throttle){_pad1 = drv_config[menu.driver].max_throttle;}
 		if(_pad1>1000){_pad1=1000;}
 		// Regen - Paddle 2
 		_pad2 = (_pad2 < ((MID_PAD_V + MIN_RGN_DZ) * ADC_POINTS_PER_V)) ? 0 : _pad2 - ((MID_PAD_V + MIN_RGN_DZ) * ADC_POINTS_PER_V);
 		_pad2 = (_pad2 * 1000) / (((HGH_PAD_V - MAX_RGN_DZ) - (MID_PAD_V + MIN_RGN_DZ)) * ADC_POINTS_PER_V);
 		if(_pad2>1000){_pad2=1000;}
-		_pad2 *= config.max_rgn / 1000.0;
+		_pad2 *= drv_config[menu.driver].max_regen / 1000.0;
 
 		*_thr = _pad1;
 		*_rgn = _pad2;
@@ -842,7 +847,7 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 			_pad1 -= ((MID_PAD_V + MIN_THR_DZ) * ADC_POINTS_PER_V);
 			_pad1 = (_pad1 * 1000) / (((HGH_PAD_V - MAX_THR_DZ) - (MID_PAD_V + MIN_THR_DZ)) * ADC_POINTS_PER_V);
 			if(esc.velocity_kmh < config.low_spd_threshold && _pad1 > config.max_thr_lowspd){_pad1 = config.max_thr_lowspd;}
-			if(!menu.driver && _pad1 > MAX_THR_DISP){_pad1 = MAX_THR_DISP;}
+			if(_pad1 > drv_config[menu.driver].max_throttle){_pad1 = drv_config[menu.driver].max_throttle;}
 			if(_pad1>1000){_pad1=1000;}
 
 			*_thr = _pad1;
@@ -853,7 +858,7 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 			_pad1 = ((MID_PAD_V - MIN_RGN_DZ) * ADC_POINTS_PER_V) - _pad1;
 			_pad1 = (_pad1 * 1000) / (((MID_PAD_V - MIN_RGN_DZ) - (LOW_PAD_V + MAX_THR_DZ)) * ADC_POINTS_PER_V);
 			if(_pad1>1000){_pad1=1000;}
-			_pad1 *= config.max_rgn / 1000.0;
+			_pad1 *= drv_config[menu.driver].max_regen / 1000.0;
 
 			*_thr = 0;
 			*_rgn = _pad1;
@@ -866,7 +871,7 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 			_pad1 = ((MID_PAD_V - MIN_RGN_DZ) * ADC_POINTS_PER_V) - _pad1;
 			_pad1 = (_pad1 * 1000) / (((MID_PAD_V - MIN_RGN_DZ) - (LOW_PAD_V + MAX_THR_DZ)) * ADC_POINTS_PER_V);
 			if(_pad1>1000){_pad1=1000;}
-			_pad1 *= config.max_rgn / 1000.0;
+			_pad1 *= drv_config[menu.driver].max_regen / 1000.0;
 
 			*_thr = 0;
 			*_rgn = _pad1;
@@ -876,7 +881,7 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 			_pad2 = ((MID_PAD_V - MIN_RGN_DZ) * ADC_POINTS_PER_V) - _pad2;
 			_pad2 = (_pad2 * 1000) / (((MID_PAD_V - MIN_RGN_DZ) - (LOW_PAD_V + MAX_THR_DZ)) * ADC_POINTS_PER_V);
 			if(_pad2>1000){_pad2=1000;}
-			_pad2 *= config.max_rgn / 1000.0;
+			_pad2 *= drv_config[menu.driver].max_regen / 1000.0;
 
 			*_thr = 0;
 			*_rgn = _pad2;
@@ -887,7 +892,7 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 			_pad1 = (_pad1 * 1000) / (((HGH_PAD_V - MAX_THR_DZ) - (MID_PAD_V + MIN_THR_DZ)) * ADC_POINTS_PER_V);
 
 			if(esc.velocity_kmh < config.low_spd_threshold && _pad1 > config.max_thr_lowspd){_pad1 = config.max_thr_lowspd;}
-			if(!menu.driver && _pad1 > MAX_THR_DISP){_pad1 = MAX_THR_DISP;}
+			if(_pad1 > drv_config[menu.driver].max_throttle){_pad1 = drv_config[menu.driver].max_throttle;}
 			if(_pad1>1000){_pad1=1000;}
 
 			*_thr = _pad1;
@@ -899,7 +904,7 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 			_pad2 = (_pad2 * 1000) / (((HGH_PAD_V - MAX_THR_DZ) - (MID_PAD_V + MIN_THR_DZ)) * ADC_POINTS_PER_V);
 
 			if(esc.velocity_kmh < config.low_spd_threshold && _pad2 > config.max_thr_lowspd){_pad2 = config.max_thr_lowspd;}
-			if(!menu.driver && _pad2 > MAX_THR_DISP){_pad2 = MAX_THR_DISP;}
+			if(_pad2 > drv_config[menu.driver].max_throttle){_pad2 = drv_config[menu.driver].max_throttle;}
 			if(_pad2>1000){_pad2=1000;}
 
 			*_thr = _pad2;
@@ -1193,28 +1198,40 @@ void persistent_store(void)
 		stats.odometer_tr = 0.0;
 	}
 
-	switch (clock.t_s % 3)
+	if (STATS_CONF_CHANGED)
 	{
-	case 0:
-		ee_write(ADD_ODO, conv_float_uint(stats.odometer));
-		ee_write(ADD_ODOTR, conv_float_uint(stats.odometer_tr));
-		break;
-	case 1:
-		ee_write(ADD_BMUWHR, conv_float_uint(bmu.watt_hrs));
-		ee_write(ADD_MPPT1WHR, conv_float_uint(mppt1.watt_hrs));
-		ee_write(ADD_MPPT2WHR, conv_float_uint(mppt2.watt_hrs));
-		break;
-	case 2:
-		;
-		uint32_t *conf_add = (uint32_t *)(&(config.can_esc));
+		CLR_STATS_CONF_CHANGED
+		uint32_t *conf_add = (uint32_t *)(&(config));
 		ee_write(ADD_CONF1, *conf_add++);
 		ee_write(ADD_CONF2, *conf_add++);
 		ee_write(ADD_CONF3, *conf_add++);
 		ee_write(ADD_CONF4, *conf_add++);
 		ee_write(ADD_CONF5, *conf_add++);
-		ee_write(ADD_CONF6, *conf_add++);
-		ee_write(ADD_CONF7, *conf_add);
-		break;
+		ee_write(ADD_CONF6, *conf_add);
+
+		conf_add = (uint32_t *)(&(drv_config));
+		ee_write(ADD_DRV0_CONF1, *conf_add++);
+		ee_write(ADD_DRV0_CONF2, *conf_add++);
+		ee_write(ADD_DRV1_CONF1, *conf_add++);
+		ee_write(ADD_DRV1_CONF2, *conf_add++);
+		ee_write(ADD_DRV2_CONF1, *conf_add++);
+		ee_write(ADD_DRV2_CONF2, *conf_add++);
+		ee_write(ADD_DRV3_CONF1, *conf_add++);
+		ee_write(ADD_DRV3_CONF2, *conf_add++);
+
+		return;
+	}
+
+	if (clock.t_s % 2)
+	{
+		ee_write(ADD_ODO, conv_float_uint(stats.odometer));
+		ee_write(ADD_ODOTR, conv_float_uint(stats.odometer_tr));
+	}
+	else
+	{
+		ee_write(ADD_BMUWHR, conv_float_uint(bmu.watt_hrs));
+		ee_write(ADD_MPPT1WHR, conv_float_uint(mppt1.watt_hrs));
+		ee_write(ADD_MPPT2WHR, conv_float_uint(mppt2.watt_hrs));
 	}
 }
 
@@ -1243,7 +1260,6 @@ void nonpersistent_load(void)
 	stats.errors = 0;
 	stats.max_speed = 0;
 	stats.cruise_speed = 0;
-	stats.ramp_speed = 5;
 	stats.paddle_mode = 1;
 }
 

@@ -967,10 +967,6 @@ void menu_config (void)
 
 	_lcd_putTitle("-LIMITS-");
 	sprintf(buffer, "MAX_ESC_CUR   %5.1f ", MAX_ESC_CUR);
-	sprintf(buffer, "MAX_REGEN     %5.1f ", MAX_REGEN);
-	sprintf(buffer, "MAX_THR_DISP  %5.1f ", MAX_THR_DISP);
-	sprintf(buffer, "MAX_THR_LOW   %5.1f ", MAX_THR_LOWSPD);
-	sprintf(buffer, "LOWSPD_THRES  %5.1f ", LOWSPD_THRES);
 	*/
 }
 

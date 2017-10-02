@@ -17,13 +17,7 @@
 #define HGH_PAD_V         2.25
 #define ADC_POINTS_PER_V  1240.909091 // 0-3.3V on pin
 
-#define ECONOMY_RAMP_SPEED  5
-#define SPORTS_RAMP_SPEED   30
-#define REGEN_RAMP_SPEED    30
-
 #define MAX_ESC_CUR         65.0  // Amps
-
-#define MAX_THR_DISP        750.0 // Maximum available throttle in display mode - 0 - 1000 (0% - 100%)
 
 #define IIR_GAIN_ELECTRICAL 1000
 #define IIR_GAIN_THERMAL    10
@@ -101,19 +95,26 @@
 // EEPROM Addresses
 // These values only define the order of storage in the EEPROM
 // Logic in eeprom.c handles the actual EEPROM memory addressing
-#define ADD_BUZZ     0
-#define ADD_ODO      1
-#define ADD_ODOTR    2
-#define ADD_MPPT1WHR 3
-#define ADD_BMUWHR   4
-#define ADD_MPPT2WHR 5
-#define ADD_CONF1    6
-#define ADD_CONF2    7
-#define ADD_CONF3    8
-#define ADD_CONF4    9
-#define ADD_CONF5    10
-#define ADD_CONF6    11
-#define ADD_CONF7    12
+#define ADD_BUZZ		0
+#define ADD_ODO			1
+#define ADD_ODOTR		2
+#define ADD_MPPT1WHR	3
+#define ADD_BMUWHR		4
+#define ADD_MPPT2WHR	5
+#define ADD_CONF1		6
+#define ADD_CONF2		7
+#define ADD_CONF3		8
+#define ADD_CONF4		9
+#define ADD_CONF5		10
+#define ADD_CONF6		11
+#define ADD_DRV0_CONF1	12
+#define ADD_DRV0_CONF2	13
+#define ADD_DRV1_CONF1	14
+#define ADD_DRV1_CONF2	15
+#define ADD_DRV2_CONF1	16
+#define ADD_DRV2_CONF2	17
+#define ADD_DRV3_CONF1	18
+#define ADD_DRV3_CONF2	19
 
 // Function Prototypes
 void main_driver_check(void);

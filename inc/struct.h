@@ -237,7 +237,6 @@ typedef struct BMU_STRUCT
 
 struct STATS_STRUCT
 {
-	unsigned int ramp_speed;  // .1%/cycle
 	float odometer;           // km
 	float odometer_tr;        // km
 	float max_speed;          // kmh
@@ -391,10 +390,17 @@ typedef struct CAR_CONFIG_STRUCT
 	uint16_t can_mppt2;
 
 	float wheel_d; // Wheel d in m
-	uint16_t max_rgn; // Maximum available regen - 0 to 1000 (0% to 100%)
-	uint16_t max_thr_lowspd; // Maximum available throttle under LOWSPD_THRES - 0 - 1000 (0% - 100%)
-	uint8_t low_spd_threshold; // Threshold speed for low speed throttle cap
+	uint16_t max_thr_lowspd; // Maximum available throttle under LOWSPD_THRES - 0 to 1000 (0% to 100%)
+	uint16_t low_spd_threshold; // Threshold speed for low speed throttle cap
 } CAR_CONFIG;
+
+typedef struct DRIVER_CONFIG_STRUCT
+{
+	uint16_t max_throttle; // Maximum available throttle - 0 to 1000 (0% to 100%)
+	uint16_t max_regen; // Maximum available regen - 0 to 1000 (0% to 100%)
+	uint16_t throttle_ramp_rate; // Rate for throttle to increase per cycle - 1 to 1000 (0.1% to 100%)
+	uint16_t regen_ramp_rate; // Rate for regen to increase per cycle - 1 to 1000 (0.1% to 100%)
+} DRIVER_CONFIG;
 
 typedef struct CONFIG_DISPLAY_STRUCT
 {
