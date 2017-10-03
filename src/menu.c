@@ -46,7 +46,7 @@ CONFIG_DISPLAY options[NUM_CONFIG] =
 		{"BMU          %#05x", 1, &(config.can_bmu), 0, 0x7ff},
 		{"MPPT1        %#05x", 1, &(config.can_mppt1), 0, 0x7ff},
 		{"MPPT2        %#05x", 1, &(config.can_mppt2), 0, 0x7ff},
-		{"WHEEL d      %5.3f", 0x80 | 3, &(config.wheel_d), 0, 0},
+		{"WHEEL d (m)  %5.3f", 0x80 | 3, &(config.wheel_d), 0, 0},
 		{"MAX THR LOW  %04u", 1, &(config.max_thr_lowspd), 0, 1000},
 		{"LOW SPD      %03u", 0x80 | 0, &(config.low_spd_threshold), 0, 0},
 		{"DRV0 MAX THR %04u", 1, &(drv_config[0].max_throttle), 0, 1000},
@@ -65,7 +65,6 @@ CONFIG_DISPLAY options[NUM_CONFIG] =
 		{"DRV3 MAX RGN %04u", 1, &(drv_config[3].max_regen), 0, 1000},
 		{"DRV3 THR RMP %04u", 1, &(drv_config[3].throttle_ramp_rate), 0, 1000},
 		{"DRV3 RGN RMP %04u", 1, &(drv_config[3].regen_ramp_rate), 0, 1000}
-
 };
 
 
@@ -83,7 +82,7 @@ CONFIG_DISPLAY options[NUM_CONFIG] =
  ******************************************************************************/
 void menu_errOnStart (void)
 {
-  lcd_putstring(0,0, "--    CAUTION!    --");
+  lcd_putstring(0,0, "**    CAUTION!    **");
   lcd_putstring(1,0, EROW);
   lcd_putstring(2,0, "   GEARS ENGAGED!   ");
   lcd_putstring(3,0, EROW);
@@ -118,12 +117,12 @@ void menu_esc_wait(void)
 void menu_driver (void)
 {
   menu.driver = 255;
-  menu.submenu_pos = 1;
+  menu.submenu_pos = 0;
   CLR_MENU_SELECTED;
 
   _lcd_putTitle("-DRIVER-");
-  lcd_putstring(1,0, "   DISPLAY    RACE 1");
-  lcd_putstring(2,0, "   RACE 2     RACE 3");
+  lcd_putstring(1,0, "   RACE      HOT LAP");
+  lcd_putstring(2,0, "   TEST      DISPLAY");
 
   while(menu.driver == 255)
   {
@@ -133,27 +132,27 @@ void menu_driver (void)
       default:
       case 0:
         lcd_putstring(1,0, SELECTOR);
-        lcd_putstring(1,11, DESELECTOR);
+        lcd_putstring(1,10, DESELECTOR);
         lcd_putstring(2,0, DESELECTOR);
-        lcd_putstring(2,11, DESELECTOR);
+        lcd_putstring(2,10, DESELECTOR);
         break;
       case 1:
         lcd_putstring(1,0, DESELECTOR);
-        lcd_putstring(1,11, SELECTOR);
+        lcd_putstring(1,10, SELECTOR);
         lcd_putstring(2,0, DESELECTOR);
-        lcd_putstring(2,11, DESELECTOR);
+        lcd_putstring(2,10, DESELECTOR);
         break;
       case 2:
         lcd_putstring(1,0, DESELECTOR);
-        lcd_putstring(1,11, DESELECTOR);
+        lcd_putstring(1,10, DESELECTOR);
         lcd_putstring(2,0, SELECTOR);
-        lcd_putstring(2,11, DESELECTOR);
+        lcd_putstring(2,10, DESELECTOR);
         break;
       case 3:
         lcd_putstring(1,0, DESELECTOR);
-        lcd_putstring(1,11, DESELECTOR);
+        lcd_putstring(1,10, DESELECTOR);
         lcd_putstring(2,0, DESELECTOR);
-        lcd_putstring(2,11, SELECTOR);
+        lcd_putstring(2,10, SELECTOR);
         break;
     }
 
@@ -182,7 +181,7 @@ void menu_intro (void)
 {
   lcd_putstring(0,0, "**  WSU WSC 2017  **");
   lcd_putstring(1,0, EROW);
-  lcd_putstring(2,0, "  UNLIMITED. Driver ");
+  lcd_putstring(2,0, "   CRIMSON Driver   ");
   lcd_putstring(3,0, "   Interface v3.0   ");
   delayMs(1,3500);
 
@@ -213,7 +212,7 @@ void menu_intro (void)
 void menu_info (void)
 {
   _lcd_putTitle("-INFO-");
-  lcd_putstring(1,0, "UNLIMITED. Dash 3.0 ");
+  lcd_putstring(1,0, "CRIMSON Dash 3.0    ");
   lcd_putstring(2,0, "HW Version: 3.0     ");
   lcd_putstring(3,0, "SW Version: 3.0     ");
 }
@@ -1537,79 +1536,66 @@ void menu_init (void)
 
   switch (menu.driver)
   {
-    case 0: // DISPLAY
-      menu.menu_items = 12;
-      menu.menus[0] = menu_home;
-      menu.menus[1] = menu_controls;
-      menu.menus[2] = menu_MPPT1;
-      menu.menus[3] = menu_MPPT2;
-      menu.menus[4] = menu_MPPTPower;
-      menu.menus[5] = menu_motor;
-      menu.menus[6] = menu_battery;
-      menu.menus[7] = menu_options;
-      menu.menus[8] = menu_peaks;
-      menu.menus[9] = menu_runtime;
-      menu.menus[10] = menu_odometer;
-      menu.menus[11] = menu_info;
-      break;
-    default:
-    case 1: // RACE 1
-        menu.menu_items = 7;
-        menu.menus[0] = menu_home;
-        menu.menus[1] = menu_cruise;
-        menu.menus[2] = menu_average_power;
-        menu.menus[3] = menu_errors;
-        menu.menus[4] = menu_options;
-        menu.menus[5] = menu_runtime;
-        menu.menus[6] = menu_odometer;
-      break;
-    case 2: // RACE 2
-      menu.menu_items = 8;
-      menu.menus[0] = menu_home;
-      menu.menus[1] = menu_cruise;
-      menu.menus[2] = menu_average_power;
-      menu.menus[2] = menu_temperature;
-      menu.menus[3] = menu_errors;
-      menu.menus[4] = menu_options;
-      menu.menus[5] = menu_runtime;
-      menu.menus[6] = menu_odometer;
-      break;
-    case 3: // RACE 3
-      menu.menu_items = 11;
-      menu.menus[0] = menu_home;
-      menu.menus[1] = menu_cruise;
-      menu.menus[2] = menu_average_power;
-      menu.menus[3] = menu_temperature;
-      menu.menus[4] = menu_MPPT1;
-      menu.menus[5] = menu_MPPT2;
-      menu.menus[6] = menu_MPPTPower;
-      menu.menus[7] = menu_errors;
-      menu.menus[8] = menu_runtime;
-      menu.menus[9] = menu_odometer;
-      menu.menus[10] = menu_options;
-      break;
-    case 9: // TEST
-    	menu.menu_items = 19;
-    	menu.menus[0] = menu_home;
-    	menu.menus[1] = menu_controls;
-    	menu.menus[2] = menu_cruise;
-    	menu.menus[3] = menu_MPPT1;
-    	menu.menus[4] = menu_MPPT2;
-    	menu.menus[5] = menu_MPPTPower;
-    	menu.menus[6] = menu_motor;
-    	menu.menus[7] = menu_battery;
-    	menu.menus[8] = menu_average_power;
-    	menu.menus[9] = menu_temperature;
-    	menu.menus[10] = menu_debug;
-    	menu.menus[11] = menu_errors;
-    	menu.menus[12] = menu_options;
-    	menu.menus[13] = menu_config;
-    	menu.menus[14] = menu_peaks;
-    	menu.menus[15] = menu_runtime;
-    	menu.menus[16] = menu_odometer;
-    	menu.menus[17] = menu_info;
-    	menu.menus[18] = menu_escBus;
-    	break;
+  case 0: // Race
+	  menu.menu_items = 12;
+	  menu.menus[0] = menu_home;
+	  menu.menus[1] = menu_cruise;
+	  menu.menus[2] = menu_MPPT1;
+	  menu.menus[3] = menu_MPPT2;
+	  menu.menus[4] = menu_MPPTPower;
+	  menu.menus[5] = menu_motor;
+	  menu.menus[6] = menu_battery;
+	  menu.menus[7] = menu_average_power;
+	  menu.menus[8] = menu_temperature;
+	  menu.menus[9] = menu_options;
+	  menu.menus[10] = menu_runtime;
+	  menu.menus[11] = menu_odometer;
+	  break;
+  case 1: // Hot Lap
+	  menu.menu_items = 7;
+	  menu.menus[0] = menu_home;
+	  menu.menus[1] = menu_motor;
+	  menu.menus[2] = menu_temperature;
+	  menu.menus[3] = menu_errors;
+	  menu.menus[4] = menu_options;
+	  menu.menus[5] = menu_runtime;
+	  menu.menus[6] = menu_odometer;
+	  break;
+  case 2: // Test/Setup
+	  menu.menu_items = 19;
+	  menu.menus[0] = menu_home;
+	  menu.menus[1] = menu_controls;
+	  menu.menus[2] = menu_cruise;
+	  menu.menus[3] = menu_MPPT1;
+	  menu.menus[4] = menu_MPPT2;
+	  menu.menus[5] = menu_MPPTPower;
+	  menu.menus[6] = menu_motor;
+	  menu.menus[7] = menu_battery;
+	  menu.menus[8] = menu_average_power;
+	  menu.menus[9] = menu_temperature;
+	  menu.menus[10] = menu_debug;
+	  menu.menus[11] = menu_errors;
+	  menu.menus[12] = menu_options;
+	  menu.menus[13] = menu_config;
+	  menu.menus[14] = menu_peaks;
+	  menu.menus[15] = menu_runtime;
+	  menu.menus[16] = menu_odometer;
+	  menu.menus[17] = menu_info;
+	  menu.menus[18] = menu_escBus;
+	  break;
+  case 3: // Display
+	  menu.menu_items = 10;
+	  menu.menus[0] = menu_home;
+	  menu.menus[1] = menu_MPPT1;
+	  menu.menus[2] = menu_MPPT2;
+	  menu.menus[3] = menu_MPPTPower;
+	  menu.menus[4] = menu_motor;
+	  menu.menus[5] = menu_battery;
+	  menu.menus[6] = menu_options;
+	  menu.menus[7] = menu_peaks;
+	  menu.menus[8] = menu_runtime;
+	  menu.menus[9] = menu_odometer;
+	  break;
   }
 
   CLR_MENU_SELECTED;
