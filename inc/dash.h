@@ -27,6 +27,41 @@
 #define BMU_INFO        	0xF4
 #define MPPT_RPLY			0x60
 
+// Configuration Defaults
+#define CAN_ESC				0x400
+#define CAN_CONTROL			0x500
+#define CAN_DASH_REPLY		0x510
+#define CAN_DASH_REQUEST	0x520
+#define CAN_SHUNT			0x530
+#define CAN_BMU				0x600
+#define CAN_MPPT1			0x716
+#define CAN_MPPT2			0x719
+#define WHEEL_D				0.557f
+#define MAX_THROTTLE_LOW	750
+#define LOW_SPEED_THRES		20
+
+// Driver Mode defaults
+// Race
+#define D0_MAX_THROTTLE		1000
+#define D0_MAX_REGEN		1000
+#define D0_THROTTLE_RAMP	10
+#define D0_REGEN_RAMP		30
+// Hot Lap
+#define D1_MAX_THROTTLE		1000
+#define D1_MAX_REGEN		1000
+#define D1_THROTTLE_RAMP	50
+#define D1_REGEN_RAMP		50
+// Test
+#define D2_MAX_THROTTLE		1000
+#define D2_MAX_REGEN		1000
+#define D2_THROTTLE_RAMP	10
+#define D2_REGEN_RAMP		30
+// Display
+#define D3_MAX_THROTTLE		750
+#define D3_MAX_REGEN		750
+#define D3_THROTTLE_RAMP	5
+#define D3_REGEN_RAMP		30
+
 // OUTPUTS
 #define BUZZER_ON       LPC_GPIO0->FIOSET |= (1<<3);
 #define BUZZER_OFF      LPC_GPIO0->FIOCLR |= (1<<3);

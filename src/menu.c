@@ -955,13 +955,50 @@ void menu_config (void)
 	}
 	else
 	{
-		if (btn_release_increment())
+		uint8_t inc_dec = btn_release_inc_dec();
+		if (inc_dec == 1)
 		{
 			menu_inc(&menu.submenu_pos, menu.submenu_items);
 		}
-		else if (btn_release_decrement())
+		else if (inc_dec == 2)
 		{
 			menu_dec(&menu.submenu_pos, menu.submenu_items);
+		}
+		else if (inc_dec == 3)
+		{
+			config.can_esc = CAN_ESC;
+			config.can_control = CAN_CONTROL;
+			config.can_dash_reply = CAN_DASH_REPLY;
+			config.can_dash_request = CAN_DASH_REQUEST;
+			config.can_shunt = CAN_SHUNT;
+			config.can_bmu = CAN_BMU;
+			config.can_mppt1 = CAN_MPPT1;
+			config.can_mppt2 = CAN_MPPT2;
+			config.wheel_d = WHEEL_D;
+			config.max_thr_lowspd = MAX_THROTTLE_LOW;
+			config.low_spd_threshold = LOW_SPEED_THRES;
+
+			drv_config[0].max_throttle = D0_MAX_THROTTLE;
+			drv_config[0].max_regen = D0_MAX_REGEN;
+			drv_config[0].throttle_ramp_rate = D0_THROTTLE_RAMP;
+			drv_config[0].regen_ramp_rate = D0_REGEN_RAMP;
+
+			drv_config[1].max_throttle = D1_MAX_THROTTLE;
+			drv_config[1].max_regen = D1_MAX_REGEN;
+			drv_config[1].throttle_ramp_rate = D1_THROTTLE_RAMP;
+			drv_config[1].regen_ramp_rate = D1_REGEN_RAMP;
+
+			drv_config[2].max_throttle = D2_MAX_THROTTLE;
+			drv_config[2].max_regen = D2_MAX_REGEN;
+			drv_config[2].throttle_ramp_rate = D2_THROTTLE_RAMP;
+			drv_config[2].regen_ramp_rate = D2_REGEN_RAMP;
+
+			drv_config[3].max_throttle = D3_MAX_THROTTLE;
+			drv_config[3].max_regen = D3_MAX_REGEN;
+			drv_config[3].throttle_ramp_rate = D3_THROTTLE_RAMP;
+			drv_config[3].regen_ramp_rate = D3_REGEN_RAMP;
+
+			SET_STATS_CONF_CHANGED
 		}
 		else if (btn_release_select())
 		{
@@ -1047,56 +1084,20 @@ void menu_options (void)
 
 	_lcd_putTitle("-OPTIONS-");
 
-	if (MENU_SELECTED || (clock.blink))
-	{
-		switch(menu.submenu_pos)
-		{
-		default:
-			menu.submenu_pos = 0;
-		case 0:
-			if(STATS_BUZZER){lcd_putstring(1,0, ">> BUZZER: ON       ");}
-			else{lcd_putstring(1,0, ">> BUZZER: OFF      ");}
-			len = sprintf(buffer, "   DRIVER: %d", menu.driver);
-			lcd_putstring(2,0, buffer);
-			if(len<20){_lcd_padding(2,len, 20 - len);}
-			len = sprintf(buffer, "   PADDLES: %d", stats.paddle_mode);
-			lcd_putstring(3,0, buffer);
-			if(len<20){_lcd_padding(3,len, 20 - len);}
-			break;
-		case 1:
-			if(STATS_BUZZER){lcd_putstring(1,0, "   BUZZER: ON       ");}
-			else{lcd_putstring(1,0, "   BUZZER: OFF      ");}
-			len = sprintf(buffer, ">> DRIVER: %d", menu.driver);
-			lcd_putstring(2,0, buffer);
-			if(len<20){_lcd_padding(2,len, 20 - len);}
-			len = sprintf(buffer, "   PADDLES: %d", stats.paddle_mode);
-			lcd_putstring(3,0, buffer);
-			if(len<20){_lcd_padding(3,len, 20 - len);}
-			break;
-		case 2:
-			if(STATS_BUZZER){lcd_putstring(1,0, "   BUZZER: ON       ");}
-			else{lcd_putstring(1,0, "   BUZZER: OFF      ");}
-			len = sprintf(buffer, "   DRIVER: %d", menu.driver);
-			lcd_putstring(2,0, buffer);
-			if(len<20){_lcd_padding(2,len, 20 - len);}
-			len = sprintf(buffer, ">> PADDLES: %d", stats.paddle_mode);
-			lcd_putstring(3,0, buffer);
-			if(len<20){_lcd_padding(3,len, 20 - len);}
-			break;
-		}
-	}
-	else
-	{
-		if(STATS_BUZZER){lcd_putstring(1,0, "   BUZZER: ON       ");}
-		else{lcd_putstring(1,0, "   BUZZER: OFF      ");}
-		len = sprintf(buffer, "   DRIVER: %d", menu.driver);
-		lcd_putstring(2,0, buffer);
-		if(len<20){_lcd_padding(2,len, 20 - len);}
-		len = sprintf(buffer, "   PADDLES: %d", stats.paddle_mode);
-		lcd_putstring(3,0, buffer);
-		if(len<20){_lcd_padding(3,len, 20 - len);}
-	}
+	if(STATS_BUZZER){lcd_putstring(1,2, " BUZZER: ON       ");}
+	else{lcd_putstring(1,2, " BUZZER: OFF      ");}
+	len = sprintf(buffer, " DRIVER: %d", menu.driver);
+	lcd_putstring(2,2, buffer);
+	if(len<20){_lcd_padding(2,len + 2, 20 - len);}
+	len = sprintf(buffer, " PADDLES: %d", stats.paddle_mode);
+	lcd_putstring(3,2, buffer);
+	if(len<20){_lcd_padding(3,len + 2, 20 - len);}
 
+	int i;
+	for (i = 0; i < 3; i++)
+	{
+		lcd_putstring(i + 1, 0, (menu.submenu_pos == i && (MENU_SELECTED || (clock.blink))) ? SELECTOR : DESELECTOR);
+	}
 
 	/////////////////////////////   ACTIONS   //////////////////////////////
 	if(btn_release_select())
@@ -1540,12 +1541,12 @@ void menu_init (void)
 	  menu.menu_items = 12;
 	  menu.menus[0] = menu_home;
 	  menu.menus[1] = menu_cruise;
-	  menu.menus[2] = menu_MPPT1;
-	  menu.menus[3] = menu_MPPT2;
-	  menu.menus[4] = menu_MPPTPower;
-	  menu.menus[5] = menu_motor;
-	  menu.menus[6] = menu_battery;
-	  menu.menus[7] = menu_average_power;
+	  menu.menus[2] = menu_average_power;
+	  menu.menus[3] = menu_MPPT1;
+	  menu.menus[4] = menu_MPPT2;
+	  menu.menus[5] = menu_MPPTPower;
+	  menu.menus[6] = menu_motor;
+	  menu.menus[7] = menu_battery;
 	  menu.menus[8] = menu_temperature;
 	  menu.menus[9] = menu_options;
 	  menu.menus[10] = menu_runtime;

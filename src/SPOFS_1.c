@@ -31,14 +31,14 @@
 
 
 CAR_CONFIG config =
-{ 0x400, 0x500, 0x510, 0x520, 0x530, 0x600, 0x716, 0x719, 0.557f, 750, 20 };
+{ CAN_ESC, CAN_CONTROL, CAN_DASH_REPLY, CAN_DASH_REQUEST, CAN_SHUNT, CAN_BMU, CAN_MPPT1, CAN_MPPT2, WHEEL_D, MAX_THROTTLE_LOW, LOW_SPEED_THRES };
 
 DRIVER_CONFIG drv_config[4] =
 {
-		{ 1000, 1000, 10, 30 }, // Race
-		{ 1000, 1000, 30, 30 }, // Hot Lap
-		{ 1000, 1000, 10, 30 }, // Test
-		{ 750,  750,  5,  30 }  // Display
+		{ D0_MAX_THROTTLE, D0_MAX_REGEN, D0_THROTTLE_RAMP, D0_REGEN_RAMP }, // Race
+		{ D1_MAX_THROTTLE, D1_MAX_REGEN, D1_THROTTLE_RAMP, D1_REGEN_RAMP }, // Hot Lap
+		{ D2_MAX_THROTTLE, D2_MAX_REGEN, D2_THROTTLE_RAMP, D2_REGEN_RAMP }, // Test
+		{ D3_MAX_THROTTLE, D3_MAX_REGEN, D3_THROTTLE_RAMP, D3_REGEN_RAMP }  // Display
 };
 
 MPPT mppt1 =
@@ -706,7 +706,7 @@ void main_input_check(void)
 		TOG_STATS_HAZARDS
 	}
 
-	if ((MECH_BRAKE || rgn_pos || (esc.con_tim && esc.bus_i < 0)))
+	if ((MECH_BRAKE || rgn_pos/* || (esc.con_tim && esc.bus_i < 0)*/)) // Disabled brake lights while in cruise
 	{
 		SET_STATS_BRAKE
 	}
@@ -777,7 +777,7 @@ void main_drive(void)
 
 	main_paddles(ADC_A, ADC_B, &thr_pos, &rgn_pos);
 
-	if((!FORWARD || !menu.driver || STATS_DRV_MODE) && STATS_CR_STS) // Must be in forward or not in display mode to use cruise
+	if((!FORWARD || menu.driver == 4 || STATS_DRV_MODE) && STATS_CR_STS) // Must be in forward or not in display mode to use cruise
 	{
 		buzzer(10);
 		CLR_STATS_CR_ACT
@@ -1574,7 +1574,7 @@ int main(void)
 		main_lights();
 		main_can_handler();
 		main_calc();
-		main_driver_check();
+		//main_driver_check();
 	}
 
 	return 0; // For compilers sanity
