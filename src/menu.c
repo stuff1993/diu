@@ -259,14 +259,8 @@ void menu_home (void)
 
   _lcd_putTitle("-HOME-");
 
-  sprintf(buffer, "MPPT: %3luW Drv: ", mppt1.watts + mppt2.watts);
-  if(STATS_DRV_MODE == SPORTS){sprintf(buffer + 16, "S");}
-  else                        {sprintf(buffer + 16, "E");}
-  if(STATS_CR_ACT){sprintf(buffer + 17, "C  ");}
-  else if(FORWARD){sprintf(buffer + 17, "D  ");}
-  else if(REVERSE){sprintf(buffer + 17, "R  ");}
-  else            {sprintf(buffer + 17, "N  ");}
-  if(rgn_pos){sprintf(buffer + 18, "B");}
+  sprintf(buffer, "MPPT: %3luW ", mppt1.watts + mppt2.watts);
+  sprintf(buffer + 11, "SMP: %3.0fW ", shunt.mppt_i * shunt.bat_v);
   lcd_putstring(1,0, buffer);
 
   sprintf(buffer, "Bat:  %3.0fW Thr:", shunt.watts);
@@ -805,16 +799,16 @@ void menu_debug (void)
 
   _lcd_putTitle("-DEBUG-");
 
-  len = sprintf(buffer, "%5.1fWh %4dVmin", shunt.watt_hrs, bmu.min_cell_v);
+  len = sprintf(buffer, "MPPT I %5.1A", shunt.mppt_i);
 
   lcd_putstring(1,0, buffer);
   if(len<20){_lcd_padding(1,len, 20 - len);}
 
-  len = sprintf(buffer, "%5.1fA", shunt.bat_i);
+  len = sprintf(buffer, "BUS I %5.1fA", shunt.bat_i);
   lcd_putstring(2,0, buffer);
   if(len<20){_lcd_padding(2,len, 20 - len);}
 
-  len = sprintf(buffer, "%5.1fV", shunt.bat_v);
+  len = sprintf(buffer, "BUS V %5.1fV", shunt.bat_v);
   lcd_putstring(3,0, buffer);
   if(len<20){_lcd_padding(3,len, 20 - len);}
 /*
