@@ -572,7 +572,7 @@ void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
 		 * Negative value here indicates HV not armed,
 		 * positive indicates armed.
 		 * 100.0 is arbitrarily added by the MegaBoard
-		 * to the MPPT current guarantee that the polarity
+		 * to the MPPT current to guarantee that the polarity
 		 * of the float is correct, so must be removed here.
 		 */
 		if (_data_b < 0)
@@ -646,14 +646,13 @@ void main_input_check(void)
 	SWITCH_IO = 0;
 	SWITCH_IO |= (FORWARD << 0);
 	SWITCH_IO |= (REVERSE << 1);
-	SWITCH_IO |= (SPORTS_MODE << 2);
-	SWITCH_IO |= (LEFT_ON << 3);
-	SWITCH_IO |= (RIGHT_ON << 4);
+	SWITCH_IO |= (LEFT_ON << 2);
+	SWITCH_IO |= (RIGHT_ON << 3);
 
 	// BEEP if toggle position has changed.
 	if(OLD_IO != SWITCH_IO){buzzer(50);}
 
-	if (SWITCH_IO & 0x8)
+	if (SWITCH_IO & 0x4)
 	{
 		SET_STATS_LEFT
 	}
@@ -661,7 +660,7 @@ void main_input_check(void)
 	{
 		CLR_STATS_LEFT
 	}
-	if (SWITCH_IO & 0x10)
+	if (SWITCH_IO & 0x8)
 	{
 		SET_STATS_RIGHT
 	}
@@ -971,17 +970,6 @@ void main_lights(void)
 		BLINKER_R_OFF
 	}
 
-	if (STATS_DRV_MODE)
-	{
-		SPORTS_ON
-		ECO_OFF
-	}
-	else
-	{
-		SPORTS_OFF
-		ECO_ON
-	}
-
 	// TODO: Remove MECH_BRAKE after testing to confirm brake lights. Or leave if worth keeping for driver
 	if (STATS_FAULT == 1 || MECH_BRAKE)
 	{
@@ -1025,7 +1013,7 @@ void main_can_handler(void)
 		drive.current = 0;
 		drive.speed_rpm = 0;
 
-		if(menu.driver == 3)
+		if(menu.driver == 2)
 		{
 			char rot1[20], rot2[20];
 
@@ -1485,6 +1473,7 @@ int main(void)
 	SystemCoreClockUpdate();
 
 	can1_init(BITRATE500K25MHZ);
+	can2_init(BITRATE125K25MHZ);
 	CAN_SetACCF(ACCF_BYPASS);
 
 	ee_init();
