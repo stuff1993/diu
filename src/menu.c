@@ -799,24 +799,18 @@ void menu_debug (void)
 
   _lcd_putTitle("-DEBUG-");
 
-  len = sprintf(buffer, "MPPT I %5.1A", shunt.mppt_i);
+  len = sprintf(buffer, "MPPT I %5.1fA", shunt.mppt_i);
 
   lcd_putstring(1,0, buffer);
   if(len<20){_lcd_padding(1,len, 20 - len);}
 
-  len = sprintf(buffer, "BUS I %5.1fA", shunt.bat_i);
+  len = sprintf(buffer, "BUS I  %5.1fA", shunt.bat_i);
   lcd_putstring(2,0, buffer);
   if(len<20){_lcd_padding(2,len, 20 - len);}
 
-  len = sprintf(buffer, "BUS V %5.1fV", shunt.bat_v);
+  len = sprintf(buffer, "BUS V  %5.1fV", shunt.bat_v);
   lcd_putstring(3,0, buffer);
   if(len<20){_lcd_padding(3,len, 20 - len);}
-/*
-  if(btn_release_inc_sel() == 3)
-  {
-      BMU.WattHrs = 0;
-      buzzer(50);
-  }*/
 }
 
 /******************************************************************************
@@ -1309,15 +1303,12 @@ void menu_hwoc (void) // errors[1]
   lcd_putstring(2,0, "PRESS SELECT 2 RESET");
   lcd_putstring(3,0, "PRESS OTHER 2 CANCEL");
 
-  BUZZER_ON;
-
   // BUTTONS
   if(btn_release_select())
   {
     if((LPC_CAN1->GSR & (1 << 3)))  // If previous transmission is complete, send message;
     {
       esc_reset();
-      BUZZER_OFF;
     }
   }
   if(btn_release_inc_dec()){SET_STATS_HWOC_ACK;}
