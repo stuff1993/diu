@@ -58,9 +58,14 @@ BMU bmu =
 CLOCK clock =
 { 0, 0, 0, 0, 0, 0 };
 
+// Systick
 CAN_MSG can_tx1_buf =
 { 0, 0, 0, 0 };
+// Free loop
 CAN_MSG can_tx2_buf =
+{ 0, 0, 0, 0 };
+// CAN Interrupts
+CAN_MSG can_tx3_buf =
 { 0, 0, 0, 0 };
 
 volatile unsigned char SWITCH_IO  = 0;
@@ -174,10 +179,26 @@ void SysTick_Handler(void)
 			// if disconnected for 3 seconds. Then FLAG disconnect.
 			mppt1.flags = (mppt1.flags & 0xFC) | ((mppt1.flags & 0x03) - 1);
 		}
+		else
+		{
+			mppt1.v_in = 0;
+			mppt1.i_in = 0;
+			mppt1.v_out = 0;
+			mppt1.watts = 0;
+			mppt1.flags = 0;
+		}
 		if ((mppt2.flags & 0x03) > 0)
 		{
 			// if disconnected for 3 seconds. Then FLAG disconnect.
 			mppt2.flags = (mppt2.flags & 0xFC) | ((mppt2.flags & 0x03) - 1);
+		}
+		else
+		{
+			mppt2.v_in = 0;
+			mppt2.i_in = 0;
+			mppt2.v_out = 0;
+			mppt2.watts = 0;
+			mppt2.flags = 0;
 		}
 		if (shunt.con_tim > 0)
 		{
@@ -217,10 +238,27 @@ void SysTick_Handler(void)
 		// Store data in eeprom every second
 		persistent_store();
 
+		can_tx1_buf.Frame = 0x00000000;
+		can_tx1_buf.MsgID = config.can_mppt1;
+		can2_send_message(&can_tx1_buf);
+
+		can_tx1_buf.Frame = 0x00000000;
+		can_tx1_buf.MsgID = config.can_mppt2;
+		can2_send_message(&can_tx1_buf);
+
 		if (clock.t_s >= 60)
 		{
 			clock.t_s = 0;
 			clock.t_m++;
+
+//			can_tx1_buf.Frame = 0x00000000;
+//			can_tx1_buf.MsgID = CAN_MPPT1;
+//			can2_send_message(&can_tx1_buf);
+//
+//			can_tx1_buf.Frame = 0x00000000;
+//			can_tx1_buf.MsgID = CAN_MPPT2;
+//			can2_send_message(&can_tx1_buf);
+
 			if (clock.t_m >= 60)
 			{
 				clock.t_m = 0;
@@ -263,37 +301,6 @@ void main_driver_check(void)
 }
 
 /******************************************************************************
- ** Function:    main_mppt_poll
- **
- ** Description: Sends request packet to MPPT (125K CAN Bus)
- **
- ** Parameters:  None
- ** Return:      None
- **
- ******************************************************************************/
-void main_mppt_poll(void)
-{
-	// Check mppt connection timeouts - clear instantaneous data
-	if (!(mppt1.flags & 0x03))
-	{
-		mppt1.v_in = 0;
-		mppt1.i_in = 0;
-		mppt1.v_out = 0;
-		mppt1.watts = 0;
-		mppt1.flags = 0;
-	}
-
-	if (!(mppt2.flags & 0x03))
-	{
-		mppt2.v_in = 0;
-		mppt2.i_in = 0;
-		mppt2.v_out = 0;
-		mppt2.watts = 0;
-		mppt2.flags = 0;
-	}
-}
-
-/******************************************************************************
  ** Function:    can1_unpack
  **
  ** Description: Unpacks data received on CAN1
@@ -320,13 +327,28 @@ void can1_unpack(CAN_MSG *_msg)
 	{
 		bmu_data_extract(&bmu, _msg);
 	}
-	else if (_msg->MsgID == config.can_mppt1 + MPPT_RPLY)
+}
+
+/******************************************************************************
+ ** Function:    can2_unpack
+ **
+ ** Description: Unpacks data received on CAN2
+ **
+ ** Parameters:  Received CAN message
+ ** Return:      None
+ **
+ ******************************************************************************/
+void can2_unpack(CAN_MSG *_msg)
+{
+	if (_msg->MsgID == config.can_mppt1 + MPPT_RPLY)
 	{
+		mppt_data_transfer(_msg);
 		mppt_data_extract(&mppt1, _msg);
 		//extractMPPT1DATA();
 	}
 	else if (_msg->MsgID == config.can_mppt2 + MPPT_RPLY)
 	{
+		mppt_data_transfer(_msg);
 		mppt_data_extract(&mppt2, _msg);
 		//extractMPPT2DATA();
 	}
@@ -449,9 +471,8 @@ void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg)
 	_v_in |= ((_data_a & 0xFF00) >> 8);  // Masking and shifting the lower 8 LSB
 	_v_in *= 1.50;                        // Scaling
 
-	_data_a = (_data_a >> 16);
-	_i_in |= ((_data_a & 0x3) << 8);     // Masking and shifting the lower 8 LSB
-	_i_in |= ((_data_a & 0xFF00) >> 8);  // Masking and shifting the upper 2 MSB
+	_i_in |= ((_data_a & 0x30000) >> 8);     // Masking and shifting the lower 8 LSB
+	_i_in |= ((_data_a & 0xFF000000) >> 24);  // Masking and shifting the upper 2 MSB
 	_i_in *= 0.87;                        // Scaling
 
 	_v_out |= ((_data_b & 0x3) << 8);    // Masking and shifting the upper 2 MSB
@@ -460,10 +481,49 @@ void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg)
 
 	// Update the structure after IIR filtering
 	_mppt->tmp = iir_filter_uint(((_data_b & 0xFF0000) >> 16), _mppt->tmp, IIR_GAIN_THERMAL);
-	_mppt->v_in = iir_filter_uint(_v_in, _mppt->v_in, IIR_GAIN_ELECTRICAL);
-	_mppt->i_in = iir_filter_uint(_i_in, _mppt->i_in, IIR_GAIN_ELECTRICAL);
-	_mppt->v_out = iir_filter_uint(_v_out, _mppt->v_out, IIR_GAIN_ELECTRICAL);
+//	_mppt->v_in = iir_filter_uint(_v_in, _mppt->v_in, IIR_GAIN_ELECTRICAL);
+//	_mppt->i_in = iir_filter_uint(_i_in, _mppt->i_in, IIR_GAIN_ELECTRICAL);
+//	_mppt->v_out = iir_filter_uint(_v_out, _mppt->v_out, IIR_GAIN_ELECTRICAL);
+
+	_mppt->v_in = _v_in;
+	_mppt->i_in = _i_in;
+	_mppt->v_out = _v_out;
 	_mppt->flags |= 0x03; // Connection timing bits
+
+	_mppt->watts = (_mppt->v_in * _mppt->i_in) / 1000.0;
+	if (_mppt->tmp > _mppt->max_tmp)
+	{
+		_mppt->max_tmp = _mppt->tmp;
+	}
+	if (_mppt->v_in > _mppt->max_v_in)
+	{
+		_mppt->max_v_in = _mppt->v_in;
+	}
+	if (_mppt->i_in > _mppt->max_i_in)
+	{
+		_mppt->max_i_in = _mppt->i_in;
+	}
+	if (_mppt->watts > _mppt->max_watts)
+	{
+		_mppt->max_watts = _mppt->watts;
+	}
+}
+
+/******************************************************************************
+ ** Function:    mppt_data_transfer
+ **
+ ** Description: Extracts data from CAN message into MPPT structure.
+ ** 			 Uses DriveTek message structure.
+ **
+ ** Parameters:  1. Address of MPPT to extract to
+ ** 			 2. CAN message to extract from
+ ** Return:      None
+ **
+ ******************************************************************************/
+void mppt_data_transfer(CAN_MSG *_msg)
+{
+	can_tx3_buf = *_msg;
+	can1_send_message(&can_tx3_buf);
 }
 
 /******************************************************************************
@@ -496,9 +556,28 @@ void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
 	case 2:
 		_esc->bus_v = iir_filter_float(_esc->bus_v, conv_uint_float(_msg->DataA), IIR_GAIN_ELECTRICAL);
 		_esc->bus_i = iir_filter_float(_esc->bus_i, conv_uint_float(_msg->DataB), IIR_GAIN_ELECTRICAL);
+
+		_esc->watts = _esc->bus_v * _esc->bus_i;
+		if (_esc->watts > _esc->max_watts)
+		{
+			_esc->max_watts = _esc->watts;
+		}
+		if (_esc->bus_i > _esc->max_bus_i)
+		{
+			_esc->max_bus_i = _esc->bus_i;
+		}
+		if (_esc->bus_v > _esc->max_bus_v)
+		{
+			_esc->max_bus_v = _esc->bus_v;
+		}
 		break;
 	case 3:
 		_esc->velocity_kmh = conv_uint_float(_msg->DataB) * 3.6;
+
+		if (esc.velocity_kmh > stats.max_speed)
+		{
+			stats.max_speed = _esc->velocity_kmh;
+		}
 		break;
 	case 11:
 		_esc->heatsink_tmp = conv_uint_float(_msg->DataB);
@@ -558,10 +637,22 @@ void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
 	switch (id_offset)
 	{
 	case 0:
-		_shunt->bat_v = conv_uint_float(_msg->DataA); // Values filtered on shunt side
-		_shunt->bat_i = conv_uint_float(_msg->DataB);
-		_shunt->watts = _shunt->bat_i * _shunt->bat_v;
+		_shunt->bus_v = conv_uint_float(_msg->DataA); // Values filtered on shunt side
+		_shunt->bus_i = conv_uint_float(_msg->DataB);
+		_shunt->bus_watts = _shunt->bus_i * _shunt->bus_v;
 		_shunt->con_tim = 3;
+
+		if (_shunt->bus_watts > _shunt->max_bus_watts)
+		{
+			_shunt->max_bus_watts = _shunt->bus_watts;
+		}
+
+		if (_shunt->bus_i > _shunt->max_bat_i) {
+			_shunt->max_bat_i = _shunt->bus_i;
+		}
+		if (_shunt->bus_v > _shunt->max_bat_v) {
+			_shunt->max_bat_v = _shunt->bus_v;
+		}
 		break;
 	case 1:
 		_shunt->watt_hrs = conv_uint_float(_msg->DataA);
@@ -585,6 +676,15 @@ void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
 			SET_STATS_ARMED
 		}
 		_shunt->mppt_i = _data_b - 100.0;
+		_shunt->mppt_watts = _shunt->mppt_i * _shunt->bus_v;
+		if (shunt.mppt_i > shunt.max_mppt_i)
+		{
+			shunt.max_mppt_i = shunt.mppt_i;
+		}
+		if (shunt.mppt_watts > shunt.max_mppt_watts)
+		{
+			shunt.max_mppt_watts = shunt.mppt_watts;
+		}
 	}
 }
 
@@ -622,6 +722,20 @@ void bmu_data_extract(BMU *_bmu, CAN_MSG *_msg)
 		// Packet is in mV and mA
 		_bmu->bus_v = iir_filter_uint(_msg->DataA / 1000, _bmu->bus_v, IIR_GAIN_ELECTRICAL);
 		_bmu->bus_i = iir_filter_int(_msg->DataB / 1000, _bmu->bus_i, IIR_GAIN_ELECTRICAL);
+
+		_bmu->watts = _bmu->bus_i * _bmu->bus_v;
+		if (_bmu->watts > _bmu->max_watts)
+		{
+			_bmu->max_watts = _bmu->watts;
+		}
+		if (_bmu->bus_i > _bmu->max_bus_i)
+		{
+			_bmu->max_bus_i = _bmu->bus_i;
+		}
+		if (_bmu->bus_v > _bmu->max_bus_v)
+		{
+			_bmu->max_bus_v = _bmu->bus_v;
+		}
 		break;
 	case BMU_INFO + 9:
 		_bmu->status = _msg->DataA & 0x7; // Only Voltage and Temperature flags relevant
@@ -650,7 +764,10 @@ void main_input_check(void)
 	SWITCH_IO |= (RIGHT_ON << 3);
 
 	// BEEP if toggle position has changed.
-	if(OLD_IO != SWITCH_IO){buzzer(50);}
+	if(OLD_IO != SWITCH_IO)
+	{
+		buzzer(50);
+	}
 
 	if (SWITCH_IO & 0x4)
 	{
@@ -680,16 +797,16 @@ void main_input_check(void)
 
 		if(menu.menu_pos==0){buzzer(10);}
 		if((esc.error & 0x2) && !STATS_SWOC_ACK){SET_STATS_SWOC_ACK;}
-		if((esc.error & 0x1) && !STATS_HWOC_ACK){SET_STATS_HWOC_ACK;BUZZER_OFF}
+		if((esc.error & 0x1) && !STATS_HWOC_ACK){SET_STATS_HWOC_ACK;}
 		if(STATS_COMMS == 1)  // send NO RESPONSE packet
 		{
 			if((LPC_CAN1->GSR & (1 << 3)))  // Check Global Status Register
 			{
-				can_tx1_buf.Frame = 0x00010000; // 11-bit, no RTR, DLC is 1 byte
-				can_tx1_buf.MsgID = config.can_dash_reply + 1;
-				can_tx1_buf.DataA = 0x0;
-				can_tx1_buf.DataB = 0x0;
-				can1_send_message(&can_tx1_buf);
+				can_tx2_buf.Frame = 0x00010000; // 11-bit, no RTR, DLC is 1 byte
+				can_tx2_buf.MsgID = config.can_dash_reply + 1;
+				can_tx2_buf.DataA = 0x0;
+				can_tx2_buf.DataB = 0x0;
+				can1_send_message(&can_tx2_buf);
 			}
 			CLR_STATS_COMMS
 		}
@@ -1063,51 +1180,6 @@ void main_can_handler(void)
 }
 
 /******************************************************************************
- ** Function:    main_calc
- **
- ** Description: Calculates instantaneous values and peaks
- **
- ** Parameters:  None
- ** Return:      None
- **
- ******************************************************************************/
-void main_calc(void)
-{
-	// Calculate Power of components
-	esc.watts = esc.bus_v * esc.bus_i;
-	bmu.watts = bmu.bus_i * bmu.bus_v;
-
-
-	mppt1.watts = (mppt1.v_in * mppt1.i_in) / 1000.0;
-	mppt2.watts = (mppt2.v_in * mppt2.i_in) / 1000.0;
-
-	// Check peaks
-	if(esc.watts > esc.max_watts){esc.max_watts = esc.watts;}
-	if(esc.bus_i > esc.max_bus_i){esc.max_bus_i = esc.bus_i;}
-	if(esc.bus_v > esc.max_bus_v){esc.max_bus_v = esc.bus_v;}
-	if(esc.velocity_kmh > stats.max_speed){stats.max_speed = esc.velocity_kmh;}
-
-	if(mppt1.tmp > mppt1.max_tmp){mppt1.max_tmp = mppt1.tmp;}
-	if(mppt1.v_in > mppt1.max_v_in){mppt1.max_v_in = mppt1.v_in;}
-	if(mppt1.i_in > mppt1.max_i_in){mppt1.max_i_in = mppt1.i_in;}
-	if(mppt1.watts > mppt1.max_watts){mppt1.max_watts = mppt1.watts;}
-
-	if(mppt2.tmp > mppt2.max_tmp){mppt2.max_tmp = mppt2.tmp;}
-	if(mppt2.v_in > mppt2.max_v_in){mppt2.max_v_in = mppt2.v_in;}
-	if(mppt2.i_in > mppt2.max_i_in){mppt2.max_i_in = mppt2.i_in;}
-	if(mppt2.watts > mppt2.max_watts){mppt2.max_watts = mppt2.watts;}
-
-	if(bmu.watts > bmu.max_watts){bmu.max_watts = bmu.watts;}
-	if(bmu.bus_i > bmu.max_bus_i){bmu.max_bus_i = bmu.bus_i;}
-	if(bmu.bus_v > bmu.max_bus_v){bmu.max_bus_v = bmu.bus_v;}
-
-	if(shunt.watts > shunt.max_watts){shunt.max_watts = shunt.watts;}
-	if(shunt.mppt_i > shunt.max_mppt_i){shunt.max_mppt_i = shunt.mppt_i;}
-	if(shunt.bat_i > shunt.max_bat_i){shunt.max_bat_i = shunt.bat_i;}
-	if(shunt.bat_v > shunt.max_bat_v){shunt.max_bat_v = shunt.bat_v;}
-}
-
-/******************************************************************************
  ** Function:    esc_reset
  **
  ** Description: Resets motorcontroller(s) with CAN packet
@@ -1147,7 +1219,7 @@ void persistent_load(void)
 	mppt1.watt_hrs = conv_uint_float(ee_read(ADD_MPPT1WHR));
 	mppt2.watt_hrs = conv_uint_float(ee_read(ADD_MPPT2WHR));
 
-	uint32_t *conf_add = (uint32_t *)(&(config));
+	uint32_t *conf_add = (uint32_t *)(&config);
 	*conf_add++ = ee_read(ADD_CONF1);
 	*conf_add++ = ee_read(ADD_CONF2);
 	*conf_add++ = ee_read(ADD_CONF3);
@@ -1396,12 +1468,12 @@ void motorcontroller_init(void)
 	{
 
 	}
-	can_tx1_buf.Frame = 0x00080000;
-	can_tx1_buf.MsgID = config.can_control + 2;
-	can_tx1_buf.DataA = 0x0;
-	can_tx1_buf.DataB = conv_float_uint(1);
+	can_tx2_buf.Frame = 0x00080000;
+	can_tx2_buf.MsgID = config.can_control + 2;
+	can_tx2_buf.DataA = 0x0;
+	can_tx2_buf.DataB = conv_float_uint(1);
 	force_buzzer(20);
-	while (!can1_send_message(&can_tx1_buf))
+	while (!can1_send_message(&can_tx2_buf))
 	{
 
 	}
@@ -1551,7 +1623,6 @@ int main(void)
 
 			menu.menus[menu.menu_pos]();
 		}
-		main_mppt_poll();
 		main_input_check();
 		stats.errors &= 0b11100111;
 		stats.errors |= main_fault_check() << 3;
@@ -1562,7 +1633,6 @@ int main(void)
 		}
 		main_lights();
 		main_can_handler();
-		main_calc();
 		//main_driver_check();
 	}
 

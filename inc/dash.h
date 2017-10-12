@@ -153,8 +153,8 @@
 
 // Function Prototypes
 void main_driver_check(void);
-void main_mppt_poll(void);
 void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg);
+void mppt_data_transfer(CAN_MSG *_msg);
 void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg);
 void dash_data_extract(CAN_MSG *_msg);
 void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg);
@@ -165,7 +165,6 @@ void main_drive(void);
 void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn);
 void main_lights(void);
 void main_can_handler(void);
-void main_calc(void);
 void esc_reset(void);
 void nonpersistent_load(void);
 void persistent_load(void);

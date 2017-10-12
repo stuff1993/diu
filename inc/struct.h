@@ -365,15 +365,18 @@ typedef struct CLOCK_STRUCT
 
 typedef struct SHUNT_STRUCT
 {
-	float bat_v;
-	float bat_i;
+	float bus_v;
+	float bus_i;
 	float mppt_i;
 	float watt_hrs;
-	float watts;
+
+	float bus_watts;
+	float mppt_watts;
 	float max_bat_v;
 	float max_bat_i;
 	float max_mppt_i;
-	float max_watts;
+	float max_bus_watts;
+	float max_mppt_watts;
 	uint8_t con_tim;
 } SHUNT;
 
