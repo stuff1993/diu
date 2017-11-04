@@ -57,6 +57,7 @@ struct MENUS
 
 // startup screens
 void menu_errOnStart(void);
+void menu_esc_wait(void);
 void menu_driver(void);
 void menu_intro(void);
 

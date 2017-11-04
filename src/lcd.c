@@ -61,7 +61,7 @@ void lcd_data_write( unsigned char data )
 void lcd_clear( void)
 {
   lcd_command_write( 0x01 );
-  delay10US(20);
+  delay10US(50);
 }
 
 

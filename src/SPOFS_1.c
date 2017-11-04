@@ -1,3 +1,12 @@
+// TODO: Update drive modes - DISP, TEST, HOT LAP, RACE
+
+// TODO: For ANU
+// Remove HV control + all shunt stuff?
+// Remove avg power
+// Remove debug mode
+// Remove d mode
+// Need to know more about their HV precharge
+
 #ifdef __USE_CMSIS
 #include "LPC17xx.h"
 #endif
@@ -20,6 +29,18 @@
 #include "can.h"
 #include "menu.h"
 
+
+CAR_CONFIG config =
+{ CAN_ESC, CAN_CONTROL, CAN_DASH_REPLY, CAN_DASH_REQUEST, CAN_SHUNT, CAN_BMU, CAN_MPPT1, CAN_MPPT2, WHEEL_D, MAX_THROTTLE_LOW, LOW_SPEED_THRES };
+
+DRIVER_CONFIG drv_config[4] =
+{
+		{ D0_MAX_THROTTLE, D0_MAX_REGEN, D0_THROTTLE_RAMP, D0_REGEN_RAMP }, // Race
+		{ D1_MAX_THROTTLE, D1_MAX_REGEN, D1_THROTTLE_RAMP, D1_REGEN_RAMP }, // Hot Lap
+		{ D2_MAX_THROTTLE, D2_MAX_REGEN, D2_THROTTLE_RAMP, D2_REGEN_RAMP }, // Test
+		{ D3_MAX_THROTTLE, D3_MAX_REGEN, D3_THROTTLE_RAMP, D3_REGEN_RAMP }  // Display
+};
+
 MPPT mppt1 =
 { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 MPPT mppt2 =
@@ -37,9 +58,14 @@ BMU bmu =
 CLOCK clock =
 { 0, 0, 0, 0, 0, 0 };
 
+// Systick
 CAN_MSG can_tx1_buf =
 { 0, 0, 0, 0 };
+// Free loop
 CAN_MSG can_tx2_buf =
+{ 0, 0, 0, 0 };
+// CAN Interrupts
+CAN_MSG can_tx3_buf =
 { 0, 0, 0, 0 };
 
 volatile unsigned char SWITCH_IO  = 0;
@@ -88,7 +114,7 @@ void SysTick_Handler(void)
 	if ((!(clock.t_ms % 10)) && STATS_ARMED)
 	{
 		can_tx1_buf.Frame = 0x00080000;
-		can_tx1_buf.MsgID = ESC_CONTROL + 1;
+		can_tx1_buf.MsgID = config.can_control + 1;
 		can_tx1_buf.DataA = conv_float_uint(drive.speed_rpm);
 		if (drive.current < 0)
 		{
@@ -100,13 +126,6 @@ void SysTick_Handler(void)
 		}
 		can1_send_message(&can_tx1_buf);
 
-		// TODO: This may only need to be sent once - investigate
-		can_tx1_buf.Frame = 0x00080000;
-		can_tx1_buf.MsgID = ESC_CONTROL + 2;
-		can_tx1_buf.DataA = 0x0;
-		can_tx1_buf.DataB = conv_float_uint(1);
-		can1_send_message(&can_tx1_buf);
-
 		// Average power stats
 		esc.avg_power += esc.watts;
 		mppt1.avg_power += mppt1.watts;
@@ -115,10 +134,10 @@ void SysTick_Handler(void)
 
 		// Light control message
 		// If hazards, set both left and right
-		can_tx1_buf.Frame = 0x00010000;
-		can_tx1_buf.MsgID = DASH_RPLY;
-		can_tx1_buf.DataA = STATS_LEFT | (STATS_RIGHT << 1) | (STATS_BRAKE << 2) | STATS_HAZARDS | (STATS_HAZARDS << 1);
-		can_tx1_buf.DataB = 0x0;
+		can_tx1_buf.Frame = 0x00080000;
+		can_tx1_buf.MsgID = config.can_dash_reply;
+		can_tx1_buf.DataA = STATS_LEFT | (STATS_RIGHT << 1) | (STATS_BRAKE << 2) | (MECH_BRAKE << 3) | STATS_HAZARDS | (STATS_HAZARDS << 1);
+		can_tx1_buf.DataB = thr_pos << 16 | rgn_pos;
 		can1_send_message(&can_tx1_buf);
 	}
 
@@ -160,24 +179,40 @@ void SysTick_Handler(void)
 			// if disconnected for 3 seconds. Then FLAG disconnect.
 			mppt1.flags = (mppt1.flags & 0xFC) | ((mppt1.flags & 0x03) - 1);
 		}
+		else
+		{
+			mppt1.v_in = 0;
+			mppt1.i_in = 0;
+			mppt1.v_out = 0;
+			mppt1.watts = 0;
+			mppt1.flags = 0;
+		}
 		if ((mppt2.flags & 0x03) > 0)
 		{
 			// if disconnected for 3 seconds. Then FLAG disconnect.
 			mppt2.flags = (mppt2.flags & 0xFC) | ((mppt2.flags & 0x03) - 1);
 		}
+		else
+		{
+			mppt2.v_in = 0;
+			mppt2.i_in = 0;
+			mppt2.v_out = 0;
+			mppt2.watts = 0;
+			mppt2.flags = 0;
+		}
 		if (shunt.con_tim > 0)
 		{
 			shunt.con_tim--;
 		}
-		if (esc.timeout)
+		if (esc.con_tim)
 		{
-			esc.timeout--;
+			esc.con_tim--;
 		}
 
 		// CAN transceiver seems to struggle to send these and the drive packets above, so only send one at a time.
 		can_tx1_buf.Frame = 0x00080000;
 		if (clock.t_s % 2) {
-			can_tx1_buf.MsgID = DASH_RPLY + 3;
+			can_tx1_buf.MsgID = config.can_dash_reply + 3;
 			if (stats.avg_power_counter)
 			{
 				can_tx1_buf.DataA = conv_float_uint(esc.avg_power / stats.avg_power_counter);
@@ -193,7 +228,7 @@ void SysTick_Handler(void)
 		{
 			if (stats.avg_power_counter)
 			{
-				can_tx1_buf.MsgID = DASH_RPLY + 4;
+				can_tx1_buf.MsgID = config.can_dash_reply + 4;
 				can_tx1_buf.DataA = conv_float_uint(mppt1.avg_power / stats.avg_power_counter);
 				can_tx1_buf.DataB = conv_float_uint(mppt2.avg_power / stats.avg_power_counter);
 				can1_send_message(&can_tx1_buf);
@@ -203,10 +238,27 @@ void SysTick_Handler(void)
 		// Store data in eeprom every second
 		persistent_store();
 
+		can_tx1_buf.Frame = 0x00000000;
+		can_tx1_buf.MsgID = config.can_mppt1;
+		can2_send_message(&can_tx1_buf);
+
+		can_tx1_buf.Frame = 0x00000000;
+		can_tx1_buf.MsgID = config.can_mppt2;
+		can2_send_message(&can_tx1_buf);
+
 		if (clock.t_s >= 60)
 		{
 			clock.t_s = 0;
 			clock.t_m++;
+
+//			can_tx1_buf.Frame = 0x00000000;
+//			can_tx1_buf.MsgID = CAN_MPPT1;
+//			can2_send_message(&can_tx1_buf);
+//
+//			can_tx1_buf.Frame = 0x00000000;
+//			can_tx1_buf.MsgID = CAN_MPPT2;
+//			can2_send_message(&can_tx1_buf);
+
 			if (clock.t_m >= 60)
 			{
 				clock.t_m = 0;
@@ -249,37 +301,6 @@ void main_driver_check(void)
 }
 
 /******************************************************************************
- ** Function:    main_mppt_poll
- **
- ** Description: Sends request packet to MPPT (125K CAN Bus)
- **
- ** Parameters:  None
- ** Return:      None
- **
- ******************************************************************************/
-void main_mppt_poll(void)
-{
-	// Check mppt connection timeouts - clear instantaneous data
-	if (!(mppt1.flags & 0x03))
-	{
-		mppt1.v_in = 0;
-		mppt1.i_in = 0;
-		mppt1.v_out = 0;
-		mppt1.watts = 0;
-		mppt1.flags = 0;
-	}
-
-	if (!(mppt2.flags & 0x03))
-	{
-		mppt2.v_in = 0;
-		mppt2.i_in = 0;
-		mppt2.v_out = 0;
-		mppt2.watts = 0;
-		mppt2.flags = 0;
-	}
-}
-
-/******************************************************************************
  ** Function:    can1_unpack
  **
  ** Description: Unpacks data received on CAN1
@@ -290,29 +311,44 @@ void main_mppt_poll(void)
  ******************************************************************************/
 void can1_unpack(CAN_MSG *_msg)
 {
-	if (_msg->MsgID >= ESC_BASE && _msg->MsgID <= ESC_BASE + 23)
+	if (_msg->MsgID >= config.can_esc && _msg->MsgID <= config.can_esc + 23)
 	{
 		esc_data_extract(&esc, _msg);
 	}
-	else if (_msg->MsgID >= DASH_RQST && _msg->MsgID <= DASH_RQST + 1)
+	else if (_msg->MsgID >= config.can_dash_request && _msg->MsgID <= config.can_dash_request + 1)
 	{
 		dash_data_extract(_msg);
 	}
-	else if (_msg->MsgID >= BMU_SHUNT && _msg->MsgID <= BMU_SHUNT + 1)
+	else if (_msg->MsgID >= config.can_shunt && _msg->MsgID <= config.can_shunt + 1)
 	{
 		shunt_data_extract(&shunt, _msg);
 	}
-	else if (_msg->MsgID >= (BMU_BASE + BMU_INFO + 4) && _msg->MsgID <= (BMU_BASE + BMU_INFO + 9))
+	else if (_msg->MsgID >= (config.can_bmu + BMU_INFO + 4) && _msg->MsgID <= (config.can_bmu + BMU_INFO + 9))
 	{
 		bmu_data_extract(&bmu, _msg);
 	}
-	else if (_msg->MsgID == MPPT1_RPLY)
+}
+
+/******************************************************************************
+ ** Function:    can2_unpack
+ **
+ ** Description: Unpacks data received on CAN2
+ **
+ ** Parameters:  Received CAN message
+ ** Return:      None
+ **
+ ******************************************************************************/
+void can2_unpack(CAN_MSG *_msg)
+{
+	if (_msg->MsgID == config.can_mppt1 + MPPT_RPLY)
 	{
+		mppt_data_transfer(_msg);
 		mppt_data_extract(&mppt1, _msg);
 		//extractMPPT1DATA();
 	}
-	else if (_msg->MsgID == MPPT2_RPLY)
+	else if (_msg->MsgID == config.can_mppt2 + MPPT_RPLY)
 	{
+		mppt_data_transfer(_msg);
 		mppt_data_extract(&mppt2, _msg);
 		//extractMPPT2DATA();
 	}
@@ -435,9 +471,8 @@ void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg)
 	_v_in |= ((_data_a & 0xFF00) >> 8);  // Masking and shifting the lower 8 LSB
 	_v_in *= 1.50;                        // Scaling
 
-	_data_a = (_data_a >> 16);
-	_i_in |= ((_data_a & 0x3) << 8);     // Masking and shifting the lower 8 LSB
-	_i_in |= ((_data_a & 0xFF00) >> 8);  // Masking and shifting the upper 2 MSB
+	_i_in |= ((_data_a & 0x30000) >> 8);     // Masking and shifting the lower 8 LSB
+	_i_in |= ((_data_a & 0xFF000000) >> 24);  // Masking and shifting the upper 2 MSB
 	_i_in *= 0.87;                        // Scaling
 
 	_v_out |= ((_data_b & 0x3) << 8);    // Masking and shifting the upper 2 MSB
@@ -446,10 +481,49 @@ void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg)
 
 	// Update the structure after IIR filtering
 	_mppt->tmp = iir_filter_uint(((_data_b & 0xFF0000) >> 16), _mppt->tmp, IIR_GAIN_THERMAL);
-	_mppt->v_in = iir_filter_uint(_v_in, _mppt->v_in, IIR_GAIN_ELECTRICAL);
-	_mppt->i_in = iir_filter_uint(_i_in, _mppt->i_in, IIR_GAIN_ELECTRICAL);
-	_mppt->v_out = iir_filter_uint(_v_out, _mppt->v_out, IIR_GAIN_ELECTRICAL);
+//	_mppt->v_in = iir_filter_uint(_v_in, _mppt->v_in, IIR_GAIN_ELECTRICAL);
+//	_mppt->i_in = iir_filter_uint(_i_in, _mppt->i_in, IIR_GAIN_ELECTRICAL);
+//	_mppt->v_out = iir_filter_uint(_v_out, _mppt->v_out, IIR_GAIN_ELECTRICAL);
+
+	_mppt->v_in = _v_in;
+	_mppt->i_in = _i_in;
+	_mppt->v_out = _v_out;
 	_mppt->flags |= 0x03; // Connection timing bits
+
+	_mppt->watts = (_mppt->v_in * _mppt->i_in) / 1000.0;
+	if (_mppt->tmp > _mppt->max_tmp)
+	{
+		_mppt->max_tmp = _mppt->tmp;
+	}
+	if (_mppt->v_in > _mppt->max_v_in)
+	{
+		_mppt->max_v_in = _mppt->v_in;
+	}
+	if (_mppt->i_in > _mppt->max_i_in)
+	{
+		_mppt->max_i_in = _mppt->i_in;
+	}
+	if (_mppt->watts > _mppt->max_watts)
+	{
+		_mppt->max_watts = _mppt->watts;
+	}
+}
+
+/******************************************************************************
+ ** Function:    mppt_data_transfer
+ **
+ ** Description: Extracts data from CAN message into MPPT structure.
+ ** 			 Uses DriveTek message structure.
+ **
+ ** Parameters:  1. Address of MPPT to extract to
+ ** 			 2. CAN message to extract from
+ ** Return:      None
+ **
+ ******************************************************************************/
+void mppt_data_transfer(CAN_MSG *_msg)
+{
+	can_tx3_buf = *_msg;
+	can1_send_message(&can_tx3_buf);
 }
 
 /******************************************************************************
@@ -464,10 +538,12 @@ void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg)
  ******************************************************************************/
 void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
 {
-	_esc->timeout = 5;
-	switch (_msg->MsgID)
+	uint16_t id_offset = _msg->MsgID - config.can_esc;
+
+	switch (id_offset)
 	{
-	case ESC_BASE + 1:
+	case 1:
+		_esc->con_tim = 3;
 		_esc->error = (_msg->DataA >> 16);
 		if (_esc->error == 0x2)
 		{
@@ -477,21 +553,40 @@ void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
 			REGEN_ON
 		}
 		break;
-	case ESC_BASE + 2:
+	case 2:
 		_esc->bus_v = iir_filter_float(_esc->bus_v, conv_uint_float(_msg->DataA), IIR_GAIN_ELECTRICAL);
 		_esc->bus_i = iir_filter_float(_esc->bus_i, conv_uint_float(_msg->DataB), IIR_GAIN_ELECTRICAL);
+
+		_esc->watts = _esc->bus_v * _esc->bus_i;
+		if (_esc->watts > _esc->max_watts)
+		{
+			_esc->max_watts = _esc->watts;
+		}
+		if (_esc->bus_i > _esc->max_bus_i)
+		{
+			_esc->max_bus_i = _esc->bus_i;
+		}
+		if (_esc->bus_v > _esc->max_bus_v)
+		{
+			_esc->max_bus_v = _esc->bus_v;
+		}
 		break;
-	case ESC_BASE + 3:
+	case 3:
 		_esc->velocity_kmh = conv_uint_float(_msg->DataB) * 3.6;
+
+		if (esc.velocity_kmh > stats.max_speed)
+		{
+			stats.max_speed = _esc->velocity_kmh;
+		}
 		break;
-	case ESC_BASE + 11:
+	case 11:
 		_esc->heatsink_tmp = conv_uint_float(_msg->DataB);
 		_esc->motor_tmp = conv_uint_float(_msg->DataA);
 		break;
-	case ESC_BASE + 12:
+	case 12:
 		_esc->board_tmp = conv_uint_float(_msg->DataA);
 		break;
-	case ESC_BASE + 14:
+	case 14:
 		_esc->odometer = conv_uint_float(_msg->DataA);
 		break;
 	}
@@ -508,16 +603,18 @@ void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
  ******************************************************************************/
 void dash_data_extract(CAN_MSG *_msg)
 {
-	switch (_msg->MsgID)
+	uint16_t id_offset = _msg->MsgID - config.can_dash_request;
+
+	switch (id_offset)
 	{
-	case DASH_RQST:
+	case 0:
 		// Data = KILLDRVE
 		if (_msg->DataA == 0x4C4C494B && _msg->DataB == 0x45565244)
 		{
 			SET_STATS_STOP
 		}
 		break;
-	case DASH_RQST + 1:
+	case 1:
 		SET_STATS_COMMS
 		break;
 	}
@@ -535,15 +632,29 @@ void dash_data_extract(CAN_MSG *_msg)
  ******************************************************************************/
 void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
 {
-	switch (_msg->MsgID)
+	uint16_t id_offset = _msg->MsgID - config.can_shunt;
+
+	switch (id_offset)
 	{
-	case BMU_SHUNT:
-		_shunt->bat_v = conv_uint_float(_msg->DataA); // Values filtered on shunt side
-		_shunt->bat_i = conv_uint_float(_msg->DataB);
-		_shunt->watts = _shunt->bat_i * _shunt->bat_v;
+	case 0:
+		_shunt->bus_v = conv_uint_float(_msg->DataA); // Values filtered on shunt side
+		_shunt->bus_i = conv_uint_float(_msg->DataB);
+		_shunt->bus_watts = _shunt->bus_i * _shunt->bus_v;
 		_shunt->con_tim = 3;
+
+		if (_shunt->bus_watts > _shunt->max_bus_watts)
+		{
+			_shunt->max_bus_watts = _shunt->bus_watts;
+		}
+
+		if (_shunt->bus_i > _shunt->max_bat_i) {
+			_shunt->max_bat_i = _shunt->bus_i;
+		}
+		if (_shunt->bus_v > _shunt->max_bat_v) {
+			_shunt->max_bat_v = _shunt->bus_v;
+		}
 		break;
-	case BMU_SHUNT + 1:
+	case 1:
 		_shunt->watt_hrs = conv_uint_float(_msg->DataA);
 		float _data_b = conv_uint_float(_msg->DataB);
 
@@ -552,7 +663,7 @@ void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
 		 * Negative value here indicates HV not armed,
 		 * positive indicates armed.
 		 * 100.0 is arbitrarily added by the MegaBoard
-		 * to the MPPT current guarantee that the polarity
+		 * to the MPPT current to guarantee that the polarity
 		 * of the float is correct, so must be removed here.
 		 */
 		if (_data_b < 0)
@@ -565,6 +676,15 @@ void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
 			SET_STATS_ARMED
 		}
 		_shunt->mppt_i = _data_b - 100.0;
+		_shunt->mppt_watts = _shunt->mppt_i * _shunt->bus_v;
+		if (shunt.mppt_i > shunt.max_mppt_i)
+		{
+			shunt.max_mppt_i = shunt.mppt_i;
+		}
+		if (shunt.mppt_watts > shunt.max_mppt_watts)
+		{
+			shunt.max_mppt_watts = shunt.mppt_watts;
+		}
 	}
 }
 
@@ -580,9 +700,11 @@ void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
  ******************************************************************************/
 void bmu_data_extract(BMU *_bmu, CAN_MSG *_msg)
 {
-	switch (_msg->MsgID)
+	uint16_t id_offset = _msg->MsgID - config.can_bmu;
+
+	switch (id_offset)
 	{
-	case BMU_BASE + BMU_INFO + 4:
+	case BMU_INFO + 4:
 		_bmu->min_cell_v = _msg->DataA & 0xFFFF;
 		_bmu->max_cell_v = (_msg->DataA >> 16) & 0xFFFF;
 		_bmu->cmu_min_v = _msg->DataB & 0xFF;
@@ -590,18 +712,32 @@ void bmu_data_extract(BMU *_bmu, CAN_MSG *_msg)
 		_bmu->cell_min_v = (_msg->DataB >> 8) & 0xFF;
 		_bmu->cell_max_v = (_msg->DataB >> 24) & 0xFF;
 		break;
-	case BMU_BASE + BMU_INFO + 5:
+	case BMU_INFO + 5:
 		_bmu->max_cell_tmp = _msg->DataA & 0xFFFF;
 		_bmu->max_cell_tmp = (_msg->DataA >> 16) & 0xFFFF;
 		_bmu->cmu_min_tmp = _msg->DataB & 0xFF;
 		_bmu->cmu_max_tmp = (_msg->DataB >> 16) & 0xFF;
 		break;
-	case BMU_BASE + BMU_INFO + 6:
+	case BMU_INFO + 6:
 		// Packet is in mV and mA
 		_bmu->bus_v = iir_filter_uint(_msg->DataA / 1000, _bmu->bus_v, IIR_GAIN_ELECTRICAL);
 		_bmu->bus_i = iir_filter_int(_msg->DataB / 1000, _bmu->bus_i, IIR_GAIN_ELECTRICAL);
+
+		_bmu->watts = _bmu->bus_i * _bmu->bus_v;
+		if (_bmu->watts > _bmu->max_watts)
+		{
+			_bmu->max_watts = _bmu->watts;
+		}
+		if (_bmu->bus_i > _bmu->max_bus_i)
+		{
+			_bmu->max_bus_i = _bmu->bus_i;
+		}
+		if (_bmu->bus_v > _bmu->max_bus_v)
+		{
+			_bmu->max_bus_v = _bmu->bus_v;
+		}
 		break;
-	case BMU_BASE + BMU_INFO + 9:
+	case BMU_INFO + 9:
 		_bmu->status = _msg->DataA & 0x7; // Only Voltage and Temperature flags relevant
 		break;
 	}
@@ -624,14 +760,16 @@ void main_input_check(void)
 	SWITCH_IO = 0;
 	SWITCH_IO |= (FORWARD << 0);
 	SWITCH_IO |= (REVERSE << 1);
-	SWITCH_IO |= (SPORTS_MODE << 2);
-	SWITCH_IO |= (LEFT_ON << 3);
-	SWITCH_IO |= (RIGHT_ON << 4);
+	SWITCH_IO |= (LEFT_ON << 2);
+	SWITCH_IO |= (RIGHT_ON << 3);
 
 	// BEEP if toggle position has changed.
-	if(OLD_IO != SWITCH_IO){buzzer(50);}
+	if(OLD_IO != SWITCH_IO)
+	{
+		buzzer(50);
+	}
 
-	if (SWITCH_IO & 0x8)
+	if (SWITCH_IO & 0x4)
 	{
 		SET_STATS_LEFT
 	}
@@ -639,7 +777,7 @@ void main_input_check(void)
 	{
 		CLR_STATS_LEFT
 	}
-	if (SWITCH_IO & 0x10)
+	if (SWITCH_IO & 0x8)
 	{
 		SET_STATS_RIGHT
 	}
@@ -659,16 +797,16 @@ void main_input_check(void)
 
 		if(menu.menu_pos==0){buzzer(10);}
 		if((esc.error & 0x2) && !STATS_SWOC_ACK){SET_STATS_SWOC_ACK;}
-		if((esc.error & 0x1) && !STATS_HWOC_ACK){SET_STATS_HWOC_ACK;BUZZER_OFF}
+		if((esc.error & 0x1) && !STATS_HWOC_ACK){SET_STATS_HWOC_ACK;}
 		if(STATS_COMMS == 1)  // send NO RESPONSE packet
 		{
 			if((LPC_CAN1->GSR & (1 << 3)))  // Check Global Status Register
 			{
-				can_tx1_buf.Frame = 0x00010000; // 11-bit, no RTR, DLC is 1 byte
-				can_tx1_buf.MsgID = DASH_RPLY + 1;
-				can_tx1_buf.DataA = 0x0;
-				can_tx1_buf.DataB = 0x0;
-				can1_send_message(&can_tx1_buf);
+				can_tx2_buf.Frame = 0x00010000; // 11-bit, no RTR, DLC is 1 byte
+				can_tx2_buf.MsgID = config.can_dash_reply + 1;
+				can_tx2_buf.DataA = 0x0;
+				can_tx2_buf.DataB = 0x0;
+				can1_send_message(&can_tx2_buf);
 			}
 			CLR_STATS_COMMS
 		}
@@ -679,15 +817,12 @@ void main_input_check(void)
 		CLR_MENU_SELECTED
 	}
 
-	if(SWITCH_IO & 0x4){SET_STATS_DRV_MODE;stats.ramp_speed = SPORTS_RAMP_SPEED;}
-	else               {CLR_STATS_DRV_MODE;stats.ramp_speed = ECONOMY_RAMP_SPEED;}
-
 	if (swt_cruise() & 0x0C)
 	{
 		TOG_STATS_HAZARDS
 	}
 
-	if ((MECH_BRAKE || rgn_pos || (esc.timeout && esc.bus_i < 0)))
+	if ((MECH_BRAKE || rgn_pos/* || (esc.con_tim && esc.bus_i < 0)*/)) // Disabled brake lights while in cruise
 	{
 		SET_STATS_BRAKE
 	}
@@ -758,19 +893,28 @@ void main_drive(void)
 
 	main_paddles(ADC_A, ADC_B, &thr_pos, &rgn_pos);
 
-	if((!FORWARD || !menu.driver || STATS_DRV_MODE) && STATS_CR_STS){buzzer(10);CLR_STATS_CR_ACT;CLR_STATS_CR_STS;stats.cruise_speed = 0;} // Must be in forward or not in display mode to use cruise
-	if(rgn_pos>10 || thr_pos>10){CLR_STATS_CR_ACT;}
+	if((!FORWARD || menu.driver == 4 || STATS_DRV_MODE) && STATS_CR_STS) // Must be in forward or not in display mode to use cruise
+	{
+		buzzer(10);
+		CLR_STATS_CR_ACT
+		CLR_STATS_CR_STS
+		stats.cruise_speed = 0;
+	}
+	if(rgn_pos || thr_pos)
+	{
+		CLR_STATS_CR_ACT
+	}
 
 
 	// DRIVE LOGIC
 	if((!MECH_BRAKE || STATS_DRV_MODE) && (FORWARD || REVERSE)){
-		if(STATS_CR_ACT)                                                                                        {drive.current = 1.0;    drive.speed_rpm = stats.cruise_speed / ((60 * 3.14 * WHEEL_D_M) / 1000.0);}
+		if(STATS_CR_ACT)                                                                                        {drive.current = 1.0;    drive.speed_rpm = stats.cruise_speed / ((60 * 3.14 * config.wheel_d) / 1000.0);}
 		else if(!thr_pos && !rgn_pos)                                                                           {drive.speed_rpm = 0;    drive.current = 0;}
 		else if(rgn_pos)                                                                                        {drive.speed_rpm = 0;    drive.current = -((float)rgn_pos / 1000.0);}
 		else if(thr_pos && drive.current < 0)                                                                   {                        drive.current = 0;}
-		else if(FORWARD && esc.velocity_kmh > -5.0 && (((drive.current * 1000) + stats.ramp_speed) < thr_pos))  {drive.speed_rpm = 1500; drive.current += (stats.ramp_speed / 1000.0);}
+		else if(FORWARD && esc.velocity_kmh > -5.0 && (((drive.current * 1000) + drv_config[menu.driver].throttle_ramp_rate) < thr_pos))  {drive.speed_rpm = 1500; drive.current += (drv_config[menu.driver].throttle_ramp_rate / 1000.0);}
 		else if(FORWARD && esc.velocity_kmh > -5.0)                                                             {drive.speed_rpm = 1500; drive.current = (thr_pos / 1000.0);}
-		else if(REVERSE && esc.velocity_kmh <  1.0 && (((drive.current * 1000) + stats.ramp_speed) < thr_pos))  {drive.speed_rpm = -200; drive.current += (stats.ramp_speed / 1000.0);}
+		else if(REVERSE && esc.velocity_kmh <  1.0 && (((drive.current * 1000) + drv_config[menu.driver].throttle_ramp_rate) < thr_pos))  {drive.speed_rpm = -200; drive.current += (drv_config[menu.driver].throttle_ramp_rate / 1000.0);}
 		else if(REVERSE && esc.velocity_kmh <  1.0)                                                             {drive.speed_rpm = -200; drive.current = (thr_pos / 1000.0);}
 		else{drive.speed_rpm = 0; drive.current = 0;}}
 	else if(rgn_pos)                                                                                        	{drive.speed_rpm = 0;    drive.current = -((float)rgn_pos / 1000.0);}
@@ -800,14 +944,14 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 		// Throttle - Paddle 1
 		_pad1 = (_pad1 < ((MID_PAD_V + MIN_THR_DZ) * ADC_POINTS_PER_V)) ? 0 : _pad1 - ((MID_PAD_V + MIN_THR_DZ) * ADC_POINTS_PER_V);
 		_pad1 = (_pad1 * 1000) / (((HGH_PAD_V - MAX_THR_DZ) - (MID_PAD_V + MIN_THR_DZ)) * ADC_POINTS_PER_V);
-		if(esc.velocity_kmh < LOWSPD_THRES && _pad1 > MAX_THR_LOWSPD){_pad1 = MAX_THR_LOWSPD;}
-		if(!menu.driver && _pad1 > MAX_THR_DISP){_pad1 = MAX_THR_DISP;}
+		if(esc.velocity_kmh < config.low_spd_threshold && _pad1 > config.max_thr_lowspd){_pad1 = config.max_thr_lowspd;}
+		if(_pad1 > drv_config[menu.driver].max_throttle){_pad1 = drv_config[menu.driver].max_throttle;}
 		if(_pad1>1000){_pad1=1000;}
 		// Regen - Paddle 2
 		_pad2 = (_pad2 < ((MID_PAD_V + MIN_RGN_DZ) * ADC_POINTS_PER_V)) ? 0 : _pad2 - ((MID_PAD_V + MIN_RGN_DZ) * ADC_POINTS_PER_V);
 		_pad2 = (_pad2 * 1000) / (((HGH_PAD_V - MAX_RGN_DZ) - (MID_PAD_V + MIN_RGN_DZ)) * ADC_POINTS_PER_V);
 		if(_pad2>1000){_pad2=1000;}
-		_pad2 *= MAX_REGEN / 1000.0;
+		_pad2 *= drv_config[menu.driver].max_regen / 1000.0;
 
 		*_thr = _pad1;
 		*_rgn = _pad2;
@@ -818,8 +962,8 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 		{
 			_pad1 -= ((MID_PAD_V + MIN_THR_DZ) * ADC_POINTS_PER_V);
 			_pad1 = (_pad1 * 1000) / (((HGH_PAD_V - MAX_THR_DZ) - (MID_PAD_V + MIN_THR_DZ)) * ADC_POINTS_PER_V);
-			if(esc.velocity_kmh < LOWSPD_THRES && _pad1 > MAX_THR_LOWSPD){_pad1 = MAX_THR_LOWSPD;}
-			if(!menu.driver && _pad1 > MAX_THR_DISP){_pad1 = MAX_THR_DISP;}
+			if(esc.velocity_kmh < config.low_spd_threshold && _pad1 > config.max_thr_lowspd){_pad1 = config.max_thr_lowspd;}
+			if(_pad1 > drv_config[menu.driver].max_throttle){_pad1 = drv_config[menu.driver].max_throttle;}
 			if(_pad1>1000){_pad1=1000;}
 
 			*_thr = _pad1;
@@ -830,7 +974,7 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 			_pad1 = ((MID_PAD_V - MIN_RGN_DZ) * ADC_POINTS_PER_V) - _pad1;
 			_pad1 = (_pad1 * 1000) / (((MID_PAD_V - MIN_RGN_DZ) - (LOW_PAD_V + MAX_THR_DZ)) * ADC_POINTS_PER_V);
 			if(_pad1>1000){_pad1=1000;}
-			_pad1 *= MAX_REGEN / 1000.0;
+			_pad1 *= drv_config[menu.driver].max_regen / 1000.0;
 
 			*_thr = 0;
 			*_rgn = _pad1;
@@ -843,7 +987,7 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 			_pad1 = ((MID_PAD_V - MIN_RGN_DZ) * ADC_POINTS_PER_V) - _pad1;
 			_pad1 = (_pad1 * 1000) / (((MID_PAD_V - MIN_RGN_DZ) - (LOW_PAD_V + MAX_THR_DZ)) * ADC_POINTS_PER_V);
 			if(_pad1>1000){_pad1=1000;}
-			_pad1 *= MAX_REGEN / 1000.0;
+			_pad1 *= drv_config[menu.driver].max_regen / 1000.0;
 
 			*_thr = 0;
 			*_rgn = _pad1;
@@ -853,7 +997,7 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 			_pad2 = ((MID_PAD_V - MIN_RGN_DZ) * ADC_POINTS_PER_V) - _pad2;
 			_pad2 = (_pad2 * 1000) / (((MID_PAD_V - MIN_RGN_DZ) - (LOW_PAD_V + MAX_THR_DZ)) * ADC_POINTS_PER_V);
 			if(_pad2>1000){_pad2=1000;}
-			_pad2 *= MAX_REGEN / 1000.0;
+			_pad2 *= drv_config[menu.driver].max_regen / 1000.0;
 
 			*_thr = 0;
 			*_rgn = _pad2;
@@ -863,8 +1007,8 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 			_pad1 -= ((MID_PAD_V + MIN_THR_DZ) * ADC_POINTS_PER_V);
 			_pad1 = (_pad1 * 1000) / (((HGH_PAD_V - MAX_THR_DZ) - (MID_PAD_V + MIN_THR_DZ)) * ADC_POINTS_PER_V);
 
-			if(esc.velocity_kmh < LOWSPD_THRES && _pad1 > MAX_THR_LOWSPD){_pad1 = MAX_THR_LOWSPD;}
-			if(!menu.driver && _pad1 > MAX_THR_DISP){_pad1 = MAX_THR_DISP;}
+			if(esc.velocity_kmh < config.low_spd_threshold && _pad1 > config.max_thr_lowspd){_pad1 = config.max_thr_lowspd;}
+			if(_pad1 > drv_config[menu.driver].max_throttle){_pad1 = drv_config[menu.driver].max_throttle;}
 			if(_pad1>1000){_pad1=1000;}
 
 			*_thr = _pad1;
@@ -875,8 +1019,8 @@ void main_paddles(uint32_t _pad1, uint32_t _pad2, uint16_t *_thr, uint16_t *_rgn
 			_pad2 -= ((MID_PAD_V + MIN_THR_DZ) * ADC_POINTS_PER_V);
 			_pad2 = (_pad2 * 1000) / (((HGH_PAD_V - MAX_THR_DZ) - (MID_PAD_V + MIN_THR_DZ)) * ADC_POINTS_PER_V);
 
-			if(esc.velocity_kmh < LOWSPD_THRES && _pad2 > MAX_THR_LOWSPD){_pad2 = MAX_THR_LOWSPD;}
-			if(!menu.driver && _pad2 > MAX_THR_DISP){_pad2 = MAX_THR_DISP;}
+			if(esc.velocity_kmh < config.low_spd_threshold && _pad2 > config.max_thr_lowspd){_pad2 = config.max_thr_lowspd;}
+			if(_pad2 > drv_config[menu.driver].max_throttle){_pad2 = drv_config[menu.driver].max_throttle;}
 			if(_pad2>1000){_pad2=1000;}
 
 			*_thr = _pad2;
@@ -943,17 +1087,6 @@ void main_lights(void)
 		BLINKER_R_OFF
 	}
 
-	if (STATS_DRV_MODE)
-	{
-		SPORTS_ON
-		ECO_OFF
-	}
-	else
-	{
-		SPORTS_OFF
-		ECO_ON
-	}
-
 	// TODO: Remove MECH_BRAKE after testing to confirm brake lights. Or leave if worth keeping for driver
 	if (STATS_FAULT == 1 || MECH_BRAKE)
 	{
@@ -991,12 +1124,13 @@ void main_can_handler(void)
 {
 	if(STATS_STOP)
 	{
+		CLR_STATS_STOP
 		lcd_clear();
 
 		drive.current = 0;
 		drive.speed_rpm = 0;
 
-		if(menu.driver == 3)
+		if(menu.driver == 2)
 		{
 			char rot1[20], rot2[20];
 
@@ -1046,51 +1180,6 @@ void main_can_handler(void)
 }
 
 /******************************************************************************
- ** Function:    main_calc
- **
- ** Description: Calculates instantaneous values and peaks
- **
- ** Parameters:  None
- ** Return:      None
- **
- ******************************************************************************/
-void main_calc(void)
-{
-	// Calculate Power of components
-	esc.watts = esc.bus_v * esc.bus_i;
-	bmu.watts = bmu.bus_i * bmu.bus_v;
-
-
-	mppt1.watts = (mppt1.v_in * mppt1.i_in) / 1000.0;
-	mppt2.watts = (mppt2.v_in * mppt2.i_in) / 1000.0;
-
-	// Check peaks
-	if(esc.watts > esc.max_watts){esc.max_watts = esc.watts;}
-	if(esc.bus_i > esc.max_bus_i){esc.max_bus_i = esc.bus_i;}
-	if(esc.bus_v > esc.max_bus_v){esc.max_bus_v = esc.bus_v;}
-	if(esc.velocity_kmh > stats.max_speed){stats.max_speed = esc.velocity_kmh;}
-
-	if(mppt1.tmp > mppt1.max_tmp){mppt1.max_tmp = mppt1.tmp;}
-	if(mppt1.v_in > mppt1.max_v_in){mppt1.max_v_in = mppt1.v_in;}
-	if(mppt1.i_in > mppt1.max_i_in){mppt1.max_i_in = mppt1.i_in;}
-	if(mppt1.watts > mppt1.max_watts){mppt1.max_watts = mppt1.watts;}
-
-	if(mppt2.tmp > mppt2.max_tmp){mppt2.max_tmp = mppt2.tmp;}
-	if(mppt2.v_in > mppt2.max_v_in){mppt2.max_v_in = mppt2.v_in;}
-	if(mppt2.i_in > mppt2.max_i_in){mppt2.max_i_in = mppt2.i_in;}
-	if(mppt2.watts > mppt2.max_watts){mppt2.max_watts = mppt2.watts;}
-
-	if(bmu.watts > bmu.max_watts){bmu.max_watts = bmu.watts;}
-	if(bmu.bus_i > bmu.max_bus_i){bmu.max_bus_i = bmu.bus_i;}
-	if(bmu.bus_v > bmu.max_bus_v){bmu.max_bus_v = bmu.bus_v;}
-
-	if(shunt.watts > shunt.max_watts){shunt.max_watts = shunt.watts;}
-	if(shunt.mppt_i > shunt.max_mppt_i){shunt.max_mppt_i = shunt.mppt_i;}
-	if(shunt.bat_i > shunt.max_bat_i){shunt.max_bat_i = shunt.bat_i;}
-	if(shunt.bat_v > shunt.max_bat_v){shunt.max_bat_v = shunt.bat_v;}
-}
-
-/******************************************************************************
  ** Function:    esc_reset
  **
  ** Description: Resets motorcontroller(s) with CAN packet
@@ -1104,8 +1193,11 @@ void esc_reset(void)
 	// RESET MOTOR CONTROLLER(S)
 	// see WS22 user manual and Tritium CAN network specs
 	// TODO: try MC + 25 (0x19) + msg "RESETWS" (TRI88.004 ver3 doc, July 2013) - 2015
-	CAN_MSG reset_msg = { 0x00080000, ESC_CONTROL + 3, 0x0, 0x0 };
-	can1_send_message(&reset_msg);
+	can_tx2_buf.Frame = 0x00080000;  // 11-bit, no RTR, DLC is 1 byte
+	can_tx2_buf.MsgID = config.can_control + 3;
+	can_tx2_buf.DataA = 0x0;
+	can_tx2_buf.DataB = 0x0;
+	can1_send_message(&can_tx2_buf);
 }
 
 /******************************************************************************
@@ -1126,6 +1218,24 @@ void persistent_load(void)
 	bmu.watt_hrs = conv_uint_float(ee_read(ADD_BMUWHR));
 	mppt1.watt_hrs = conv_uint_float(ee_read(ADD_MPPT1WHR));
 	mppt2.watt_hrs = conv_uint_float(ee_read(ADD_MPPT2WHR));
+
+	uint32_t *conf_add = (uint32_t *)(&config);
+	*conf_add++ = ee_read(ADD_CONF1);
+	*conf_add++ = ee_read(ADD_CONF2);
+	*conf_add++ = ee_read(ADD_CONF3);
+	*conf_add++ = ee_read(ADD_CONF4);
+	*conf_add++ = ee_read(ADD_CONF5);
+	*conf_add = ee_read(ADD_CONF6);
+
+	conf_add = (uint32_t *)(&drv_config);
+	*conf_add++ = ee_read(ADD_DRV0_CONF1);
+	*conf_add++ = ee_read(ADD_DRV0_CONF2);
+	*conf_add++ = ee_read(ADD_DRV1_CONF1);
+	*conf_add++ = ee_read(ADD_DRV1_CONF2);
+	*conf_add++ = ee_read(ADD_DRV2_CONF1);
+	*conf_add++ = ee_read(ADD_DRV2_CONF2);
+	*conf_add++ = ee_read(ADD_DRV3_CONF1);
+	*conf_add = ee_read(ADD_DRV3_CONF2);
 
 	if (isnan(stats.odometer))
 	{
@@ -1155,6 +1265,30 @@ void persistent_store(void)
 	if (isnan(stats.odometer_tr))
 	{
 		stats.odometer_tr = 0.0;
+	}
+
+	if (STATS_CONF_CHANGED)
+	{
+		CLR_STATS_CONF_CHANGED
+		uint32_t *conf_add = (uint32_t *)(&(config));
+		ee_write(ADD_CONF1, *conf_add++);
+		ee_write(ADD_CONF2, *conf_add++);
+		ee_write(ADD_CONF3, *conf_add++);
+		ee_write(ADD_CONF4, *conf_add++);
+		ee_write(ADD_CONF5, *conf_add++);
+		ee_write(ADD_CONF6, *conf_add);
+
+		conf_add = (uint32_t *)(&(drv_config));
+		ee_write(ADD_DRV0_CONF1, *conf_add++);
+		ee_write(ADD_DRV0_CONF2, *conf_add++);
+		ee_write(ADD_DRV1_CONF1, *conf_add++);
+		ee_write(ADD_DRV1_CONF2, *conf_add++);
+		ee_write(ADD_DRV2_CONF1, *conf_add++);
+		ee_write(ADD_DRV2_CONF2, *conf_add++);
+		ee_write(ADD_DRV3_CONF1, *conf_add++);
+		ee_write(ADD_DRV3_CONF2, *conf_add++);
+
+		return;
 	}
 
 	if (clock.t_s % 2)
@@ -1195,7 +1329,6 @@ void nonpersistent_load(void)
 	stats.errors = 0;
 	stats.max_speed = 0;
 	stats.cruise_speed = 0;
-	stats.ramp_speed = 5;
 	stats.paddle_mode = 1;
 }
 
@@ -1277,6 +1410,77 @@ void gpio_init(void)
 }
 
 /******************************************************************************
+ **
+ ** Function:    led_test
+ **
+ ** Description: Activates all LEDs in sequence
+ **
+ ** Parameters:  None
+ ** Return:      None
+ **
+ ******************************************************************************/
+void led_test(void)
+{
+	const uint16_t wait_time = 500;
+	REVERSE_ON
+	delayMs(1, wait_time);
+	REVERSE_OFF
+	NEUTRAL_ON
+	delayMs(1, wait_time);
+	NEUTRAL_OFF
+	REGEN_ON
+	delayMs(1, wait_time);
+	REGEN_OFF
+	SPORTS_ON
+	delayMs(1, wait_time);
+	SPORTS_OFF
+	ECO_ON
+	delayMs(1, wait_time);
+	ECO_OFF
+	BLINKER_L_ON
+	delayMs(1, wait_time);
+	BLINKER_L_OFF
+	FAULT_ON
+	delayMs(1, wait_time);
+	FAULT_OFF
+	HV_ON
+	delayMs(1, wait_time);
+	HV_OFF
+	BLINKER_R_ON
+	delayMs(1, wait_time);
+	BLINKER_R_OFF
+}
+
+/******************************************************************************
+ **
+ ** Function:    motorcontroller_init
+ **
+ ** Description: Waits for heartbeat from motorcontroller before sending 0x502 packet
+ **
+ ** Parameters:  None
+ ** Return:      None
+ **
+ ******************************************************************************/
+void motorcontroller_init(void)
+{
+	menu_esc_wait();
+	while (esc.con_tim == 0 && !btn_release_select())
+	{
+
+	}
+	can_tx2_buf.Frame = 0x00080000;
+	can_tx2_buf.MsgID = config.can_control + 2;
+	can_tx2_buf.DataA = 0x0;
+	can_tx2_buf.DataB = conv_float_uint(1);
+	force_buzzer(20);
+	while (!can1_send_message(&can_tx2_buf))
+	{
+
+	}
+	delayMs(1, 1000);
+}
+
+/******************************************************************************
  ** Function:    buzzer
  **
  ** Description: Turns buzzer on for set amount of time if buzzer on in options
@@ -1341,6 +1545,7 @@ int main(void)
 	SystemCoreClockUpdate();
 
 	can1_init(BITRATE500K25MHZ);
+	can2_init(BITRATE125K25MHZ);
 	CAN_SetACCF(ACCF_BYPASS);
 
 	ee_init();
@@ -1348,14 +1553,18 @@ int main(void)
 	nonpersistent_load();
 	persistent_load();
 
-	SysTick_Config(SystemCoreClock / 100);  // 10mS Systicker.
-
 	ADCInit(ADC_CLK);
 
 	gpio_init();
 
 	lcd_init();
 	lcd_clear();
+
+	led_test();
+
+	motorcontroller_init();
+
+	SysTick_Config(SystemCoreClock / 100);  // 10mS Systicker.
 
 	BOD_init();
 
@@ -1414,7 +1623,6 @@ int main(void)
 
 			menu.menus[menu.menu_pos]();
 		}
-		main_mppt_poll();
 		main_input_check();
 		stats.errors &= 0b11100111;
 		stats.errors |= main_fault_check() << 3;
@@ -1425,8 +1633,7 @@ int main(void)
 		}
 		main_lights();
 		main_can_handler();
-		main_calc();
-		main_driver_check();
+		//main_driver_check();
 	}
 
 	return 0; // For compilers sanity

@@ -81,7 +81,7 @@ typedef struct VECTORS_MTRCONT_STRUCT
 
 typedef struct MOTORCONTROLLER_STRUCT
 {
-	uint8_t timeout;
+	uint8_t con_tim;
 	/// From CAN Bus
 	float bus_i;          // Bus Current
 	float bus_v;          // Bus Voltage
@@ -237,7 +237,6 @@ typedef struct BMU_STRUCT
 
 struct STATS_STRUCT
 {
-	unsigned int ramp_speed;  // .1%/cycle
 	float odometer;           // km
 	float odometer_tr;        // km
 	float max_speed;          // kmh
@@ -259,7 +258,7 @@ struct STATS_STRUCT
 #define STATS_LEFT			((stats.flags & 0x0040) >> 6)
 #define STATS_RIGHT			((stats.flags & 0x0080) >> 7)
 #define STATS_BRAKE			((stats.flags & 0x0100) >> 8)
-#define STATS_UNUSED1		((stats.flags & 0x0200) >> 9)
+#define STATS_CONF_CHANGED	((stats.flags & 0x0200) >> 9)
 #define STATS_UNUSED2		((stats.flags & 0x0400) >> 10)
 #define STATS_UNUSED3		((stats.flags & 0x0800) >> 11)
 #define STATS_UNUSED4		((stats.flags & 0x1000) >> 12)
@@ -267,56 +266,56 @@ struct STATS_STRUCT
 #define STATS_UNUSED6		((stats.flags & 0x4000) >> 14)
 #define STATS_UNUSED7		((stats.flags & 0x8000) >> 15)
 
-#define SET_STATS_DRV_MODE	stats.flags |= 0x0001;	// Sports Flagged
-#define SET_STATS_BUZZER	stats.flags |= 0x0002;
-#define SET_STATS_ARMED		stats.flags |= 0x0004;
-#define SET_STATS_CR_ACT	stats.flags |= 0x0008;
-#define SET_STATS_CR_STS	stats.flags |= 0x0010;
-#define SET_STATS_HAZARDS	stats.flags |= 0x0020;
-#define SET_STATS_LEFT		stats.flags |= 0x0040;
-#define SET_STATS_RIGHT		stats.flags |= 0x0080;
-#define SET_STATS_BRAKE		stats.flags |= 0x0100;
-#define SET_STATS_UNUSED1	stats.flags |= 0x0200;
-#define SET_STATS_UNUSED2	stats.flags |= 0x0400;
-#define SET_STATS_UNUSED3	stats.flags |= 0x0800;
-#define SET_STATS_UNUSED4	stats.flags |= 0x1000;
-#define SET_STATS_UNUSED5	stats.flags |= 0x2000;
-#define SET_STATS_UNUSED6	stats.flags |= 0x4000;
-#define SET_STATS_UNUSED7	stats.flags |= 0x8000;
+#define SET_STATS_DRV_MODE		stats.flags |= 0x0001;	// Sports Flagged
+#define SET_STATS_BUZZER		stats.flags |= 0x0002;
+#define SET_STATS_ARMED			stats.flags |= 0x0004;
+#define SET_STATS_CR_ACT		stats.flags |= 0x0008;
+#define SET_STATS_CR_STS		stats.flags |= 0x0010;
+#define SET_STATS_HAZARDS		stats.flags |= 0x0020;
+#define SET_STATS_LEFT			stats.flags |= 0x0040;
+#define SET_STATS_RIGHT			stats.flags |= 0x0080;
+#define SET_STATS_BRAKE			stats.flags |= 0x0100;
+#define SET_STATS_CONF_CHANGED	stats.flags |= 0x0200;
+#define SET_STATS_UNUSED2		stats.flags |= 0x0400;
+#define SET_STATS_UNUSED3		stats.flags |= 0x0800;
+#define SET_STATS_UNUSED4		stats.flags |= 0x1000;
+#define SET_STATS_UNUSED5		stats.flags |= 0x2000;
+#define SET_STATS_UNUSED6		stats.flags |= 0x4000;
+#define SET_STATS_UNUSED7		stats.flags |= 0x8000;
 
-#define CLR_STATS_DRV_MODE	stats.flags &= 0xFFFE;	// Economy Flagged
-#define CLR_STATS_BUZZER	stats.flags &= 0xFFFD;
-#define CLR_STATS_ARMED		stats.flags &= 0xFFFB;
-#define CLR_STATS_CR_ACT	stats.flags &= 0xFFF7;
-#define CLR_STATS_CR_STS	stats.flags &= 0xFFEF;
-#define CLR_STATS_HAZARDS	stats.flags &= 0xFFDF;
-#define CLR_STATS_LEFT		stats.flags &= 0xFFBF;
-#define CLR_STATS_RIGHT		stats.flags &= 0xFF7F;
-#define CLR_STATS_BRAKE		stats.flags &= 0xFEFF;
-#define CLR_STATS_UNUSED1	stats.flags &= 0xFDFF;
-#define CLR_STATS_UNUSED2	stats.flags &= 0xFBFF;
-#define CLR_STATS_UNUSED3	stats.flags &= 0xF7FF;
-#define CLR_STATS_UNUSED4	stats.flags &= 0xEFFF;
-#define CLR_STATS_UNUSED5	stats.flags &= 0xDFFF;
-#define CLR_STATS_UNUSED6	stats.flags &= 0xBFFF;
-#define CLR_STATS_UNUSED7	stats.flags &= 0x7FFF;
+#define CLR_STATS_DRV_MODE		stats.flags &= 0xFFFE;	// Economy Flagged
+#define CLR_STATS_BUZZER		stats.flags &= 0xFFFD;
+#define CLR_STATS_ARMED			stats.flags &= 0xFFFB;
+#define CLR_STATS_CR_ACT		stats.flags &= 0xFFF7;
+#define CLR_STATS_CR_STS		stats.flags &= 0xFFEF;
+#define CLR_STATS_HAZARDS		stats.flags &= 0xFFDF;
+#define CLR_STATS_LEFT			stats.flags &= 0xFFBF;
+#define CLR_STATS_RIGHT			stats.flags &= 0xFF7F;
+#define CLR_STATS_BRAKE			stats.flags &= 0xFEFF;
+#define CLR_STATS_CONF_CHANGED	stats.flags &= 0xFDFF;
+#define CLR_STATS_UNUSED2		stats.flags &= 0xFBFF;
+#define CLR_STATS_UNUSED3		stats.flags &= 0xF7FF;
+#define CLR_STATS_UNUSED4		stats.flags &= 0xEFFF;
+#define CLR_STATS_UNUSED5		stats.flags &= 0xDFFF;
+#define CLR_STATS_UNUSED6		stats.flags &= 0xBFFF;
+#define CLR_STATS_UNUSED7		stats.flags &= 0x7FFF;
 
-#define TOG_STATS_DRV_MODE	stats.flags ^= 0x0001;
-#define TOG_STATS_BUZZER	stats.flags ^= 0x0002;
-#define TOG_STATS_ARMED		stats.flags ^= 0x0004;
-#define TOG_STATS_CR_ACT	stats.flags ^= 0x0008;
-#define TOG_STATS_CR_STS	stats.flags ^= 0x0010;
-#define TOG_STATS_HAZARDS	stats.flags ^= 0x0020;
-#define TOG_STATS_LEFT		stats.flags ^= 0x0040;
-#define TOG_STATS_RIGHT		stats.flags ^= 0x0080;
-#define TOG_STATS_BRAKE		stats.flags ^= 0x0100;
-#define TOG_STATS_UNUSED1	stats.flags ^= 0x0200;
-#define TOG_STATS_UNUSED2	stats.flags ^= 0x0400;
-#define TOG_STATS_UNUSED3	stats.flags ^= 0x0800;
-#define TOG_STATS_UNUSED4	stats.flags ^= 0x1000;
-#define TOG_STATS_UNUSED5	stats.flags ^= 0x2000;
-#define TOG_STATS_UNUSED6	stats.flags ^= 0x4000;
-#define TOG_STATS_UNUSED7	stats.flags ^= 0x8000;
+#define TOG_STATS_DRV_MODE		stats.flags ^= 0x0001;
+#define TOG_STATS_BUZZER		stats.flags ^= 0x0002;
+#define TOG_STATS_ARMED			stats.flags ^= 0x0004;
+#define TOG_STATS_CR_ACT		stats.flags ^= 0x0008;
+#define TOG_STATS_CR_STS		stats.flags ^= 0x0010;
+#define TOG_STATS_HAZARDS		stats.flags ^= 0x0020;
+#define TOG_STATS_LEFT			stats.flags ^= 0x0040;
+#define TOG_STATS_RIGHT			stats.flags ^= 0x0080;
+#define TOG_STATS_BRAKE			stats.flags ^= 0x0100;
+#define TOG_STATS_CONF_CHANGED	stats.flags ^= 0x0200;
+#define TOG_STATS_UNUSED2		stats.flags ^= 0x0400;
+#define TOG_STATS_UNUSED3		stats.flags ^= 0x0800;
+#define TOG_STATS_UNUSED4		stats.flags ^= 0x1000;
+#define TOG_STATS_UNUSED5		stats.flags ^= 0x2000;
+#define TOG_STATS_UNUSED6		stats.flags ^= 0x4000;
+#define TOG_STATS_UNUSED7		stats.flags ^= 0x8000;
 
 /// stats.errors
 #define STATS_SWOC_ACK		((stats.errors & 0x01) >> 0)
@@ -366,16 +365,65 @@ typedef struct CLOCK_STRUCT
 
 typedef struct SHUNT_STRUCT
 {
-	float bat_v;
-	float bat_i;
+	float bus_v;
+	float bus_i;
 	float mppt_i;
 	float watt_hrs;
-	float watts;
+
+	float bus_watts;
+	float mppt_watts;
 	float max_bat_v;
 	float max_bat_i;
 	float max_mppt_i;
-	float max_watts;
+	float max_bus_watts;
+	float max_mppt_watts;
 	uint8_t con_tim;
 } SHUNT;
+
+typedef struct CAR_CONFIG_STRUCT
+{
+	// CAN Addresses
+	uint16_t can_esc;
+	uint16_t can_control;
+	uint16_t can_dash_reply;
+	uint16_t can_dash_request;
+	uint16_t can_shunt;
+	uint16_t can_bmu;
+	uint16_t can_mppt1;
+	uint16_t can_mppt2;
+
+	float wheel_d; // Wheel d in m
+	uint16_t max_thr_lowspd; // Maximum available throttle under LOWSPD_THRES - 0 to 1000 (0% to 100%)
+	uint16_t low_spd_threshold; // Threshold speed for low speed throttle cap
+} CAR_CONFIG;
+
+typedef struct DRIVER_CONFIG_STRUCT
+{
+	uint16_t max_throttle; // Maximum available throttle - 0 to 1000 (0% to 100%)
+	uint16_t max_regen; // Maximum available regen - 0 to 1000 (0% to 100%)
+	uint16_t throttle_ramp_rate; // Rate for throttle to increase per cycle - 1 to 1000 (0.1% to 100%)
+	uint16_t regen_ramp_rate; // Rate for regen to increase per cycle - 1 to 1000 (0.1% to 100%)
+} DRIVER_CONFIG;
+
+typedef struct CONFIG_DISPLAY_STRUCT
+{
+	char format[30];
+	/*
+	 * Type codes
+	 * 0 uint8
+	 * 1 uint16
+	 * 2 uint32
+	 * 3 float(0.001)
+	 *
+	 * + 128 - no upper bound
+	 * + 64 - no lower bound
+	 *
+	 * TODO - 4 float(0.01), 5 float(0.1), 6 float(1)
+	 */
+	uint8_t type;
+	void *value;
+	float lower_bound;
+	float upper_bound;
+} CONFIG_DISPLAY;
 
 #endif /* STRUCT_H_ */
