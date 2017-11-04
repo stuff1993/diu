@@ -237,7 +237,7 @@ void menu_escBus (void)
   lcd_putstring(1,0, buffer);
   if(len<20){_lcd_padding(1, len, 20 - len);}
 
-  len = sprintf(buffer, "Bat Voltage: %05.1fV", shunt.bat_v);
+  len = sprintf(buffer, "Bat Voltage: %05.1fV", shunt.bus_v);
   lcd_putstring(2,0, buffer);
   if(len<20){_lcd_padding(2, len, 20 - len);}
 
@@ -260,10 +260,10 @@ void menu_home (void)
   _lcd_putTitle("-HOME-");
 
   sprintf(buffer, "MPPT: %3luW ", mppt1.watts + mppt2.watts);
-  sprintf(buffer + 11, "SMP: %3.0fW ", shunt.mppt_i * shunt.bat_v);
+  sprintf(buffer + 11, "MCV:%4dV", bmu.min_cell_v);
   lcd_putstring(1,0, buffer);
 
-  sprintf(buffer, "Bat:  %3.0fW Thr:", shunt.watts);
+  sprintf(buffer, "Bat:  %3.0fW Thr:", shunt.bus_watts);
   if(STATS_CR_ACT){sprintf(buffer + 15, "%3.0f%% ", esc.bus_i * (100 / MAX_ESC_CUR));}
   else if(rgn_pos){sprintf(buffer + 11, "Brk:%3d%% ", rgn_pos/10);}
   else if(FORWARD){sprintf(buffer + 15, "%3d%% ", thr_pos/10);}
@@ -271,15 +271,15 @@ void menu_home (void)
   else{sprintf(buffer + 15, "---%% ");}
   lcd_putstring(2,0, buffer);
 
-  sprintf(buffer, "Motor:%3.0fW Err:", esc.watts);
-  if(esc.error)                                       {sprintf(buffer + 15, "ESC  ");}
-  else if(mppt1.flags & 0x28)                         {sprintf(buffer + 15, "MPPT1");}
-  else if(mppt2.flags & 0x28)                         {sprintf(buffer + 15, "MPPT2");}
-  else if(bmu.status & 0x00001FBF)                    {sprintf(buffer + 15, "BMU  ");}
-  else if(STATS_NO_ARR_HV)                            {sprintf(buffer + 15, "ARRHV");}
-  else if(!(mppt1.flags & 0x03 && mppt2.flags & 0x03)){sprintf(buffer + 15, "NoARR");}
-  else if(!(shunt.con_tim))                           {sprintf(buffer + 15, "NoSHT");}
-  else                                                {sprintf(buffer + 15, " --- ");}
+  sprintf(buffer, "Motor:%3.0fW ", esc.watts);
+  if(esc.error)                                       {sprintf(buffer + 11, "Err:ESC  ");}
+  else if(mppt1.flags & 0x28)                         {sprintf(buffer + 11, "Err:MPPT1");}
+  else if(mppt2.flags & 0x28)                         {sprintf(buffer + 11, "Err:MPPT2");}
+  else if(bmu.status & 0x00001FBF)                    {sprintf(buffer + 11, "Err:BMU  ");}
+  else if(STATS_NO_ARR_HV)                            {sprintf(buffer + 11, "Err:ARRHV");}
+  else if(!(mppt1.flags & 0x03 && mppt2.flags & 0x03)){sprintf(buffer + 11, "Err:NoARR");}
+  else if(!(shunt.con_tim))                           {sprintf(buffer + 11, "Err:NoSHT");}
+  else                                                {sprintf(buffer + 11, "V: %05.1fV", shunt.bus_v);}
   lcd_putstring(3,0, buffer);
 }
 
@@ -342,7 +342,7 @@ void menu_cruise (void)
       lcd_putstring(1,0, " STS:  ON  ACT:  ON ");
       sprintf(buffer, " SET: %3.0f  SPD: %3.0f ", stats.cruise_speed, esc.velocity_kmh);
       lcd_putstring(2,0, buffer);
-      sprintf(buffer, " THR: %3.0f%% Pow:%4.0fW", esc.bus_i * (100 / MAX_ESC_CUR), shunt.watts);
+      sprintf(buffer, " THR: %3.0f%% Pow:%4.0fW", esc.bus_i * (100 / MAX_ESC_CUR), shunt.bus_watts);
       lcd_putstring(3,0, buffer);
 
       // Button presses
@@ -623,11 +623,11 @@ void menu_battery (void)
     case 0:
       _lcd_putTitle("-BAT PWR-");
 
-      len = sprintf(buffer, "%5.3fV @ %5.3fA", shunt.bat_v, shunt.bat_i);
+      len = sprintf(buffer, "%5.3fV @ %5.3fA", shunt.bus_v, shunt.bus_i);
       lcd_putstring(1,0, buffer);
       if(len<20){_lcd_padding(1, len, 20 - len);}
 
-      len = sprintf(buffer, "Power: %.3fW",  shunt.watts);
+      len = sprintf(buffer, "Power: %.3fW",  shunt.bus_watts);
       lcd_putstring(2,0, buffer);
       if(len<20){_lcd_padding(2, len, 20 - len);}
 
@@ -657,7 +657,7 @@ void menu_battery (void)
       lcd_putstring(2,0, buffer);
       if(len<20){_lcd_padding(2, len, 20 - len);}
 
-      len = sprintf(buffer, "Power:   %.3fW", shunt.max_watts);
+      len = sprintf(buffer, "Power:   %.3fW", shunt.max_bus_watts);
       lcd_putstring(3,0, buffer);
       if(len<20){_lcd_padding(3, len, 20 - len);}
 
@@ -665,7 +665,7 @@ void menu_battery (void)
       {
         shunt.max_bat_i = 0;
         shunt.max_bat_v = 0;
-        shunt.max_watts = 0;
+        shunt.max_bus_watts = 0;
         buzzer(50);
       }
       break;
@@ -804,11 +804,11 @@ void menu_debug (void)
   lcd_putstring(1,0, buffer);
   if(len<20){_lcd_padding(1,len, 20 - len);}
 
-  len = sprintf(buffer, "BUS I  %5.1fA", shunt.bat_i);
+  len = sprintf(buffer, "BUS I  %5.1fA", shunt.bus_i);
   lcd_putstring(2,0, buffer);
   if(len<20){_lcd_padding(2,len, 20 - len);}
 
-  len = sprintf(buffer, "BUS V  %5.1fV", shunt.bat_v);
+  len = sprintf(buffer, "BUS V  %5.1fV", shunt.bus_v);
   lcd_putstring(3,0, buffer);
   if(len<20){_lcd_padding(3,len, 20 - len);}
 }
