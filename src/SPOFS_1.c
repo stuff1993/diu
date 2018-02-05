@@ -1,12 +1,3 @@
-// TODO: Update drive modes - DISP, TEST, HOT LAP, RACE
-
-// TODO: For ANU
-// Remove HV control + all shunt stuff?
-// Remove avg power
-// Remove debug mode
-// Remove d mode
-// Need to know more about their HV precharge
-
 #ifdef __USE_CMSIS
 #include "LPC17xx.h"
 #endif
@@ -28,7 +19,6 @@
 #include "inputs.h"
 #include "can.h"
 #include "menu.h"
-
 
 CAR_CONFIG config =
 { CAN_ESC, CAN_CONTROL, CAN_DASH_REPLY, CAN_DASH_REQUEST, CAN_SHUNT, CAN_BMU, CAN_MPPT1, CAN_MPPT2, WHEEL_D, MAX_THROTTLE_LOW, LOW_SPEED_THRES };
@@ -107,23 +97,16 @@ void BOD_IRQHandler(void)
 void SysTick_Handler(void)
 {
 	clock.t_ms++;
-	clock.blink = clock.t_ms / 50;
+	clock.blink = clock.t_ms / (SYSTICK_SEC_COUNT / 2);
 
 	// DIU CAN Heart Beat
 	// Every 100 mS send heart beat CAN packets
-	if ((!(clock.t_ms % 10)) && STATS_ARMED)
+	if ((!(clock.t_ms % (SYSTICK_SEC_COUNT / 10))) && STATS_ARMED)
 	{
 		can_tx1_buf.Frame = 0x00080000;
 		can_tx1_buf.MsgID = config.can_control + 1;
 		can_tx1_buf.DataA = conv_float_uint(drive.speed_rpm);
-		if (drive.current < 0)
-		{
-			can_tx1_buf.DataB = conv_float_uint(drive.current * -1.0);
-		}
-		else
-		{
-			can_tx1_buf.DataB = conv_float_uint(drive.current);
-		}
+		can_tx1_buf.DataB = conv_float_uint(fabsf(drive.current));
 		can1_send_message(&can_tx1_buf);
 
 		// Average power stats
@@ -150,31 +133,23 @@ void SysTick_Handler(void)
 	}
 
 	// Time sensitive Calculations
-	esc.watt_hrs += (esc.watts / 360000.0);
+	esc.watt_hrs += (esc.watts / SYSTICK_HOUR_DIV);
 
-	mppt1.watt_hrs += (mppt1.watts / 360000.0);
-	mppt2.watt_hrs += (mppt2.watts / 360000.0);
+	mppt1.watt_hrs += (mppt1.watts / SYSTICK_HOUR_DIV);
+	mppt2.watt_hrs += (mppt2.watts / SYSTICK_HOUR_DIV);
 
-	bmu.watt_hrs += (bmu.watts / 360000.0);
+	bmu.watt_hrs += (bmu.watts / SYSTICK_HOUR_DIV);
 
-	if (esc.velocity_kmh > 0)
-	{
-		stats.odometer += esc.velocity_kmh / 360000.0;
-		stats.odometer_tr += esc.velocity_kmh / 360000.0;
-	}
-	else
-	{
-		stats.odometer -= esc.velocity_kmh / 360000.0;
-		stats.odometer_tr -= esc.velocity_kmh / 360000.0;
-	}
+	stats.odometer += fabsf(esc.velocity_kmh / SYSTICK_HOUR_DIV);
+	stats.odometer_tr += fabsf(esc.velocity_kmh / SYSTICK_HOUR_DIV);
 
 	// Calculate time
-	if (clock.t_ms >= 100)
+	if (clock.t_ms >= SYSTICK_SEC_COUNT)
 	{
 		clock.t_ms = 0;
 		clock.t_s++;
 
-		if ((mppt1.flags & 0x03) > 0)
+		if (mppt1.flags & 0x03)
 		{
 			// if disconnected for 3 seconds. Then FLAG disconnect.
 			mppt1.flags = (mppt1.flags & 0xFC) | ((mppt1.flags & 0x03) - 1);
@@ -187,7 +162,7 @@ void SysTick_Handler(void)
 			mppt1.watts = 0;
 			mppt1.flags = 0;
 		}
-		if ((mppt2.flags & 0x03) > 0)
+		if (mppt2.flags & 0x03)
 		{
 			// if disconnected for 3 seconds. Then FLAG disconnect.
 			mppt2.flags = (mppt2.flags & 0xFC) | ((mppt2.flags & 0x03) - 1);
@@ -200,7 +175,7 @@ void SysTick_Handler(void)
 			mppt2.watts = 0;
 			mppt2.flags = 0;
 		}
-		if (shunt.con_tim > 0)
+		if (shunt.con_tim)
 		{
 			shunt.con_tim--;
 		}
@@ -250,15 +225,6 @@ void SysTick_Handler(void)
 		{
 			clock.t_s = 0;
 			clock.t_m++;
-
-//			can_tx1_buf.Frame = 0x00000000;
-//			can_tx1_buf.MsgID = CAN_MPPT1;
-//			can2_send_message(&can_tx1_buf);
-//
-//			can_tx1_buf.Frame = 0x00000000;
-//			can_tx1_buf.MsgID = CAN_MPPT2;
-//			can2_send_message(&can_tx1_buf);
-
 			if (clock.t_m >= 60)
 			{
 				clock.t_m = 0;
@@ -344,102 +310,13 @@ void can2_unpack(CAN_MSG *_msg)
 	{
 		mppt_data_transfer(_msg);
 		mppt_data_extract(&mppt1, _msg);
-		//extractMPPT1DATA();
 	}
 	else if (_msg->MsgID == config.can_mppt2 + MPPT_RPLY)
 	{
 		mppt_data_transfer(_msg);
 		mppt_data_extract(&mppt2, _msg);
-		//extractMPPT2DATA();
 	}
 }
-
-/*
-void extractMPPT1DATA(void)
-{
-	uint32_t RawDATA_A = can_rx2_buf.DataA;
-	uint32_t RawDATA_B = can_rx2_buf.DataB;
-
-	can_tx1_buf.MsgID = MPPT1_RPLY;
-	can_tx1_buf.Frame = 0x00070000;
-	can_tx1_buf.DataA = RawDATA_A;
-	can_tx1_buf.DataB = RawDATA_B;
-	can1_send_message( &can_tx1_buf );
-
-	uint32_t tempVOLT_IN = 0;
-	uint32_t tempCURR_IN = 0;
-	uint32_t tempVOLT_OUT = 0;
-
-	// Status Flags
-	mppt1.flags &= 0xC3;
-	mppt1.flags |= ((RawDATA_A & 0xF0) >> 2);
-
-	// Power Variables
-	tempVOLT_IN = ((RawDATA_A & 0b11) << 8);  								// Masking and shifting the upper 2 MSB
-	tempVOLT_IN = tempVOLT_IN + ((RawDATA_A & 0b1111111100000000) >> 8); 	// Masking and shifting the lower 8 LSB
-	tempVOLT_IN = tempVOLT_IN * 1.50;										// SCALING
-
-
-	RawDATA_A = (RawDATA_A >> 16);
-	tempCURR_IN = ((RawDATA_A & 0b11) << 8); 		// Masking and shifting the lower 8 LSB
-	tempCURR_IN = tempCURR_IN + ((RawDATA_A & 0b1111111100000000) >> 8);  // Masking and shifting the upper 2 MSB
-	tempCURR_IN = tempCURR_IN * 0.87;  										// SCALING
-
-	tempVOLT_OUT = ((RawDATA_B & 0b11) << 8);  									// Masking and shifting the upper 2 MSB
-	tempVOLT_OUT = tempVOLT_OUT + ((RawDATA_B & 0b1111111100000000) >> 8); 		// Masking and shifting the lower 8 LSB
-	tempVOLT_OUT = tempVOLT_OUT * 2.10;
-
-	mppt1.tmp = (((RawDATA_B & 0b111111110000000000000000) >> 16) + 7 * mppt1.tmp)/8;
-
-	// Update the global variables after IIR filtering
-	mppt1.v_in = tempVOLT_IN;	//infinite impulse response filtering
-	mppt1.i_in = tempCURR_IN;
-	mppt1.v_out = tempVOLT_OUT;
-	mppt1.flags |= 0x3;
-}
-
-void extractMPPT2DATA(void)
-{
-	uint32_t RawDATA_A = can_rx2_buf.DataA;
-	uint32_t RawDATA_B = can_rx2_buf.DataB;
-
-	can_tx1_buf.MsgID = MPPT2_RPLY;
-	can_tx1_buf.Frame = 0x00070000;
-	can_tx1_buf.DataA = RawDATA_A;
-	can_tx1_buf.DataB = RawDATA_B;
-	can1_send_message( &can_tx1_buf );
-
-	uint32_t tempVOLT_IN = 0;
-	uint32_t tempCURR_IN = 0;
-	uint32_t tempVOLT_OUT = 0;
-
-	// Status Flags
-	mppt2.flags &= 0xC3;
-	mppt2.flags |= ((RawDATA_A & 0xF0) >> 2);
-
-	// Power Variables
-	tempVOLT_IN = ((RawDATA_A & 0b11) << 8);  								// Masking and shifting the upper 2 MSB
-	tempVOLT_IN = tempVOLT_IN + ((RawDATA_A & 0b1111111100000000) >> 8); 	// Masking and shifting the lower 8 LSB
-	tempVOLT_IN = tempVOLT_IN * 1.50;										// SCALING
-
-	RawDATA_A = (RawDATA_A >> 16);
-	tempCURR_IN = ((RawDATA_A & 0b11) << 8); 								// Masking and shifting the lower 8 LSB
-	tempCURR_IN = tempCURR_IN + ((RawDATA_A & 0b1111111100000000) >> 8);  	// Masking and shifting the upper 2 MSB
-	tempCURR_IN = tempCURR_IN * 0.87;  										// SCALING
-
-	tempVOLT_OUT = ((RawDATA_B & 0b11) << 8);  									// Masking and shifting the upper 2 MSB
-	tempVOLT_OUT = tempVOLT_OUT + ((RawDATA_B & 0b1111111100000000) >> 8); 		// Masking and shifting the lower 8 LSB
-	tempVOLT_OUT = tempVOLT_OUT * 2.10;
-
-	mppt2.tmp = (((RawDATA_B & 0b111111110000000000000000) >> 16) + 7 * mppt2.tmp)/8;
-
-	// Update the global variables after IIR filtering
-	mppt2.v_in = tempVOLT_IN;	//infinite impulse response filtering
-	mppt2.i_in = tempCURR_IN;
-	mppt2.v_out = tempVOLT_OUT;
-	mppt2.flags |= 0x3;
-}
- */
 
 /******************************************************************************
  ** Function:    mppt_data_extract
@@ -452,7 +329,8 @@ void extractMPPT2DATA(void)
  ** Return:      None
  **
  ******************************************************************************/
-void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg)
+__attribute__((always_inline)) inline void
+mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg)
 {
 	// TODO: Test the shit out of this
 	uint32_t _v_in = 0;
@@ -520,7 +398,8 @@ void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg)
  ** Return:      None
  **
  ******************************************************************************/
-void mppt_data_transfer(CAN_MSG *_msg)
+__attribute__((always_inline)) inline void
+mppt_data_transfer(CAN_MSG *_msg)
 {
 	can_tx3_buf = *_msg;
 	can1_send_message(&can_tx3_buf);
@@ -536,7 +415,8 @@ void mppt_data_transfer(CAN_MSG *_msg)
  ** Return:      None
  **
  ******************************************************************************/
-void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
+__attribute__((always_inline)) inline void
+esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
 {
 	uint16_t id_offset = _msg->MsgID - config.can_esc;
 
@@ -601,7 +481,8 @@ void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg)
  ** Return:      None
  **
  ******************************************************************************/
-void dash_data_extract(CAN_MSG *_msg)
+__attribute__((always_inline)) inline void
+dash_data_extract(CAN_MSG *_msg)
 {
 	uint16_t id_offset = _msg->MsgID - config.can_dash_request;
 
@@ -630,7 +511,8 @@ void dash_data_extract(CAN_MSG *_msg)
  ** Return:      None
  **
  ******************************************************************************/
-void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
+__attribute__((always_inline)) inline void
+shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
 {
 	uint16_t id_offset = _msg->MsgID - config.can_shunt;
 
@@ -698,7 +580,8 @@ void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
  ** Return:      None
  **
  ******************************************************************************/
-void bmu_data_extract(BMU *_bmu, CAN_MSG *_msg)
+__attribute__((always_inline)) inline void
+bmu_data_extract(BMU *_bmu, CAN_MSG *_msg)
 {
 	uint16_t id_offset = _msg->MsgID - config.can_bmu;
 
@@ -764,7 +647,7 @@ void main_input_check(void)
 	SWITCH_IO |= (RIGHT_ON << 3);
 
 	// BEEP if toggle position has changed.
-	if(OLD_IO != SWITCH_IO)
+	if (OLD_IO != SWITCH_IO)
 	{
 		buzzer(50);
 	}
@@ -787,18 +670,18 @@ void main_input_check(void)
 	}
 
 
-	if((btn_ret = btn_release_left_right()))
+	if ((btn_ret = btn_release_left_right()))
 	{
 		buzzer(2);
 
-		if(btn_ret == 3)     {menu.menu_pos = 0;}
-		else if(btn_ret == 1){menu_dec(&menu.menu_pos, menu.menu_items);}
-		else if(btn_ret == 2){menu_inc(&menu.menu_pos, menu.menu_items);}
+		if (btn_ret == 3)      {menu.menu_pos = 0;}
+		else if (btn_ret == 1) {menu_dec(&menu.menu_pos, menu.menu_items);}
+		else if (btn_ret == 2) {menu_inc(&menu.menu_pos, menu.menu_items);}
 
-		if(menu.menu_pos==0){buzzer(10);}
-		if((esc.error & 0x2) && !STATS_SWOC_ACK){SET_STATS_SWOC_ACK;}
-		if((esc.error & 0x1) && !STATS_HWOC_ACK){SET_STATS_HWOC_ACK;}
-		if(STATS_COMMS == 1)  // send NO RESPONSE packet
+		if (menu.menu_pos==0) {buzzer(10);}
+		if ((esc.error & 0x2) && !STATS_SWOC_ACK) {SET_STATS_SWOC_ACK;}
+		if ((esc.error & 0x1) && !STATS_HWOC_ACK) {SET_STATS_HWOC_ACK;}
+		if (STATS_COMMS == 1)  // send NO RESPONSE packet
 		{
 			if((LPC_CAN1->GSR & (1 << 3)))  // Check Global Status Register
 			{
@@ -907,7 +790,7 @@ void main_drive(void)
 
 
 	// DRIVE LOGIC
-	if((!MECH_BRAKE || STATS_DRV_MODE) && (FORWARD || REVERSE)){
+	if ((!MECH_BRAKE || STATS_DRV_MODE) && (FORWARD || REVERSE)) {
 		if(STATS_CR_ACT)                                                                                        {drive.current = 1.0;    drive.speed_rpm = stats.cruise_speed / ((60 * 3.14 * config.wheel_d) / 1000.0);}
 		else if(!thr_pos && !rgn_pos)                                                                           {drive.speed_rpm = 0;    drive.current = 0;}
 		else if(rgn_pos)                                                                                        {drive.speed_rpm = 0;    drive.current = -((float)rgn_pos / 1000.0);}
@@ -1539,7 +1422,8 @@ void BOD_init(void)
  ** Return:      Program exit value
  **
  ******************************************************************************/
-int main(void)
+__attribute__((noreturn)) int
+main(void)
 {
 	SystemInit();
 	SystemCoreClockUpdate();
@@ -1564,7 +1448,7 @@ int main(void)
 
 	motorcontroller_init();
 
-	SysTick_Config(SystemCoreClock / 100);  // 10mS Systicker.
+	SysTick_Config(SystemCoreClock / SYSTICK_SEC_COUNT);
 
 	BOD_init();
 
@@ -1635,6 +1519,4 @@ int main(void)
 		main_can_handler();
 		//main_driver_check();
 	}
-
-	return 0; // For compilers sanity
 }

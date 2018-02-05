@@ -8,6 +8,10 @@
 #define AUTO_SWOC 1 // auto reset SWOCs
 #endif
 
+#define SYSTICK_INT_MS    10
+#define SYSTICK_SEC_COUNT (1000 / SYSTICK_INT_MS)
+#define SYSTICK_HOUR_DIV  3600000.0 / SYSTICK_INT_MS
+
 #define MAX_RGN_DZ        0.15  // V at pin
 #define MIN_RGN_DZ        0.15
 #define MAX_THR_DZ        0.15
@@ -153,12 +157,12 @@
 
 // Function Prototypes
 void main_driver_check(void);
-void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg);
-void mppt_data_transfer(CAN_MSG *_msg);
-void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg);
-void dash_data_extract(CAN_MSG *_msg);
-void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg);
-void bmu_data_extract(BMU *_shunt, CAN_MSG *_msg);
+__attribute__((always_inline)) void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg);
+__attribute__((always_inline)) void mppt_data_transfer(CAN_MSG *_msg);
+__attribute__((always_inline)) void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg);
+__attribute__((always_inline)) void dash_data_extract(CAN_MSG *_msg);
+__attribute__((always_inline)) void shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg);
+__attribute__((always_inline)) void bmu_data_extract(BMU *_shunt, CAN_MSG *_msg);
 void main_input_check(void);
 int main_fault_check(void);
 void main_drive(void);
