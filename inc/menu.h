@@ -15,6 +15,8 @@
 #define SELECTOR ">>"
 #define DESELECTOR "  "
 
+#define PAD_ROW(ROW, LEN) if (LEN<MAX_CHAR_IN_ONE_LINE){_lcd_padding(ROW, LEN, MAX_CHAR_IN_ONE_LINE - LEN);}
+
 struct MENUS
 {
   void (*menus[MAX_MENU_ITEMS]) (void);
