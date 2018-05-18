@@ -44,39 +44,40 @@
 
 typedef struct MPPT_STRUCT
 {
-	/// From CAN Bus
-	uint32_t v_in;        // Input Voltage
-	uint32_t v_out;       // Output Voltage
-	uint32_t i_in;        // Input Current
-	uint32_t tmp;         // Temperature in degrees
-	uint8_t flags;
-	uint32_t avg_power;	// Average Power
+    /// From CAN Bus
+    uint32_t v_in;        // Input Voltage * 10
+    uint32_t v_out;       // Output Voltage * 100
+    uint32_t i_in;        // Input Current * 10
+    uint32_t tmp;         // Temperature in degrees
+    uint8_t flags;
+    uint8_t con_tim;
+    uint32_t avg_power;// Average Power
 
 #if _MPPT_POWER
-	uint32_t watts;       // Watts into MPPT
-	float watt_hrs;       // Watt Hours
+    uint32_t watts;       // Watts into MPPT
+    float watt_hrs;       // Watt Hours
 #if _MPPT_PEAKS
-	uint32_t max_watts;   // Peak watts into MPPT
+    uint32_t max_watts;   // Peak watts into MPPT
 #endif // _MPPT_PEAKS
 #endif // _MPPT_POWER
 #if _MPPT_PEAKS
-	uint32_t max_v_in;     // Peak Input Voltage
-	uint32_t max_v_out;    // Peak Output Voltage
-	uint32_t max_i_in;     // Peak Input Current
-	uint32_t max_tmp;     // Peak Temperature in degrees
+    uint32_t max_v_in;    // Peak Input Voltage
+    uint32_t max_v_out;   // Peak Output Voltage
+    uint32_t max_i_in;    // Peak Input Current
+    uint32_t max_tmp;     // Peak Temperature in degrees
 #endif // _MPPT_PEAKS
 } MPPT;
 
 #if _MC_VECTORS
 typedef struct VECTORS_MTRCONT_STRUCT
 {
-	float v_real;
-	float v_imag;
-	float i_real;
-	float i_imag;
-	float bemf_real;
-	float bemf_imag;
-}VECTORS_MTRCONT;
+    float v_real;
+    float v_imag;
+    float i_real;
+    float i_imag;
+    float bemf_real;
+    float bemf_imag;
+} VECTORS_MTRCONT;
 #endif // _MC_VECTORS
 
 typedef struct MOTORCONTROLLER_STRUCT
@@ -249,22 +250,22 @@ struct STATS_STRUCT
 } stats;
 
 /// stats.flags
-#define STATS_DRV_MODE		((stats.flags & 0x0001) >> 0)
-#define STATS_BUZZER		((stats.flags & 0x0002) >> 1)
-#define STATS_ARMED			((stats.flags & 0x0004) >> 2)
-#define STATS_CR_ACT		((stats.flags & 0x0008) >> 3)
-#define STATS_CR_STS		((stats.flags & 0x0010) >> 4)
-#define STATS_HAZARDS		((stats.flags & 0x0020) >> 5)
-#define STATS_LEFT			((stats.flags & 0x0040) >> 6)
-#define STATS_RIGHT			((stats.flags & 0x0080) >> 7)
-#define STATS_BRAKE			((stats.flags & 0x0100) >> 8)
-#define STATS_CONF_CHANGED	((stats.flags & 0x0200) >> 9)
-#define STATS_UNUSED2		((stats.flags & 0x0400) >> 10)
-#define STATS_UNUSED3		((stats.flags & 0x0800) >> 11)
-#define STATS_UNUSED4		((stats.flags & 0x1000) >> 12)
-#define STATS_UNUSED5		((stats.flags & 0x2000) >> 13)
-#define STATS_UNUSED6		((stats.flags & 0x4000) >> 14)
-#define STATS_UNUSED7		((stats.flags & 0x8000) >> 15)
+#define STATS_DRV_MODE      ((stats.flags & 0x0001) >> 0)
+#define STATS_BUZZER        ((stats.flags & 0x0002) >> 1)
+#define STATS_ARMED         ((stats.flags & 0x0004) >> 2)
+#define STATS_CR_ACT        ((stats.flags & 0x0008) >> 3)
+#define STATS_CR_STS        ((stats.flags & 0x0010) >> 4)
+#define STATS_HAZARDS       ((stats.flags & 0x0020) >> 5)
+#define STATS_LEFT          ((stats.flags & 0x0040) >> 6)
+#define STATS_RIGHT         ((stats.flags & 0x0080) >> 7)
+#define STATS_BRAKE         ((stats.flags & 0x0100) >> 8)
+#define STATS_CONF_CHANGED  ((stats.flags & 0x0200) >> 9)
+#define STATS_UNUSED2       ((stats.flags & 0x0400) >> 10)
+#define STATS_UNUSED3       ((stats.flags & 0x0800) >> 11)
+#define STATS_UNUSED4       ((stats.flags & 0x1000) >> 12)
+#define STATS_UNUSED5       ((stats.flags & 0x2000) >> 13)
+#define STATS_UNUSED6       ((stats.flags & 0x4000) >> 14)
+#define STATS_UNUSED7       ((stats.flags & 0x8000) >> 15)
 
 #define SET_STATS_DRV_MODE		stats.flags |= 0x0001;	// Sports Flagged
 #define SET_STATS_BUZZER		stats.flags |= 0x0002;

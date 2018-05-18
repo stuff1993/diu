@@ -157,6 +157,7 @@
 
 // Function Prototypes
 void main_driver_check(void);
+__attribute__((always_inline)) void reset_mppt(MPPT *_mppt);
 __attribute__((always_inline)) void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg);
 __attribute__((always_inline)) void mppt_data_transfer(CAN_MSG *_msg);
 __attribute__((always_inline)) void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg);

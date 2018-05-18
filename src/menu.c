@@ -66,7 +66,8 @@ CONFIG_DISPLAY options[NUM_CONFIG] =
         {"DRV3 MAX THR %04u", 1, &(drv_config[3].max_throttle), 0, 1000},
         {"DRV3 MAX RGN %04u", 1, &(drv_config[3].max_regen), 0, 1000},
         {"DRV3 THR RMP %04u", 1, &(drv_config[3].throttle_ramp_rate), 0, 1000},
-        {"DRV3 RGN RMP %04u", 1, &(drv_config[3].regen_ramp_rate), 0, 1000}};
+        {"DRV3 RGN RMP %04u", 1, &(drv_config[3].regen_ramp_rate), 0, 1000}
+    };
 
 
 // Not in array, reference manually
