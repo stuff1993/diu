@@ -102,7 +102,7 @@ menu_errOnStart (void)
 void
 menu_esc_wait(void)
 {
-  lcd_putstring(0, 0, "**  WSU WSC 2017  **");
+  lcd_putstring(0, 0, "**  WSU ASC 2018  **");
   lcd_putstring(1, 0, " WAITING FOR ESC... ");
   lcd_putstring(2, 0, "   SELECT TO SKIP   ");
   lcd_putstring(3, 0, EROW);
@@ -203,13 +203,13 @@ menu_driver (void)
 void
 menu_intro (void)
 {
-  lcd_putstring(0, 0, "**  WSU WSC 2017  **");
+  lcd_putstring(0, 0, "**  WSU ASC 2018  **");
   lcd_putstring(1, 0, EROW);
   lcd_putstring(2, 0, "   CRIMSON Driver   ");
-  lcd_putstring(3, 0, "   Interface v3.0   ");
+  lcd_putstring(3, 0, "   Interface v4.0   ");
   delayMs(1, 3500);
 
-  lcd_putstring(0, 0, "**  WSU WSC 2017  **");
+  lcd_putstring(0, 0, "**  WSU ASC 2018  **");
   lcd_putstring(1, 0, EROW);
   lcd_putstring(2, 0, "    BUZZER Test..   ");
   lcd_putstring(3, 0, EROW);
@@ -237,9 +237,9 @@ void
 menu_info (void)
 {
   _lcd_putTitle("-INFO-");
-  lcd_putstring(1, 0, "CRIMSON Dash 3.0    ");
+  lcd_putstring(1, 0, "CRIMSON Dash 4.0    ");
   lcd_putstring(2, 0, "HW Version: 3.0     ");
-  lcd_putstring(3, 0, "SW Version: 3.0     ");
+  lcd_putstring(3, 0, "SW Version: 4.0     ");
 }
 
 /******************************************************************************

@@ -125,7 +125,7 @@ SysTick_Handler(void)
         can_tx1_buf.DataB = thr_pos << 16 | rgn_pos;
         can1_send_message(&can_tx1_buf);
     }
-    else if ((second_tenths % 5 == 2) && (bmu.status & 0x107))
+    else if ((second_tenths % 5 == 2) && !(bmu.status & 0x107))
     {
         // Every 50ms send ignition packet
         can_tx1_buf.Frame = 0x00080000;
