@@ -28,7 +28,7 @@
 #define MIN_CELL_THRESHOLD  2500
 
 // CAN offsets
-#define BMU_INFO        	0xF4
+#define BMU_INFO            0xF4
 #define MPPT_RPLY			0x60
 
 // Configuration Defaults
@@ -38,6 +38,7 @@
 #define CAN_DASH_REQUEST	0x520
 #define CAN_SHUNT			0x530
 #define CAN_BMU				0x600
+#define CAN_MPPT0           0x71F
 #define CAN_MPPT1			0x716
 #define CAN_MPPT2			0x719
 #define WHEEL_D				0.557f
@@ -161,10 +162,10 @@
 #define ADD_DRV2_CONF2	17
 #define ADD_DRV3_CONF1	18
 #define ADD_DRV3_CONF2	19
+#define ADD_MPPT0WHR	20
 
 // Function Prototypes
 void main_driver_check(void);
-__attribute__((always_inline)) void reset_mppt(MPPT *_mppt);
 __attribute__((always_inline)) void mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg);
 __attribute__((always_inline)) void mppt_data_transfer(CAN_MSG *_msg);
 __attribute__((always_inline)) void esc_data_extract(MOTORCONTROLLER *_esc, CAN_MSG *_msg);

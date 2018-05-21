@@ -20,8 +20,18 @@
 #include "can.h"
 #include "menu.h"
 
-CAR_CONFIG config =
-    {CAN_ESC, CAN_CONTROL, CAN_DASH_REPLY, CAN_DASH_REQUEST, CAN_SHUNT, CAN_BMU, CAN_MPPT1, CAN_MPPT2, WHEEL_D, MAX_THROTTLE_LOW, LOW_SPEED_THRES};
+CAR_CONFIG config = { CAN_ESC,
+        CAN_CONTROL,
+        CAN_DASH_REPLY,
+        CAN_DASH_REQUEST,
+        CAN_SHUNT,
+        CAN_BMU,
+        CAN_MPPT0,
+        CAN_MPPT1,
+        CAN_MPPT2,
+        WHEEL_D,
+        MAX_THROTTLE_LOW,
+        LOW_SPEED_THRES };
 
 DRIVER_CONFIG drv_config[4] =
     {
@@ -31,10 +41,18 @@ DRIVER_CONFIG drv_config[4] =
         {D3_MAX_THROTTLE, D3_MAX_REGEN, D3_THROTTLE_RAMP, D3_REGEN_RAMP}   // Display
     };
 
-MPPT mppt1 =
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-MPPT mppt2 =
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+/*
+ * To prevent confusion with previous code
+ * new MPPT == mppt[0]
+ * MPPT1 == mppt[1]
+ * MPPT2 == mppt[2]
+ */
+MPPT mppt[3] =
+    {
+            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+    };
 
 MOTORCONTROLLER esc =
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -62,6 +80,44 @@ volatile unsigned char SWITCH_IO = 0;
 
 uint16_t thr_pos = 0;
 uint16_t rgn_pos = 0;
+
+
+/******************************************************************************
+ ** Function:    reset_mppt
+ **
+ ** Description: Reset mppt values
+ **
+ ** Parameters:  None
+ ** Return:      None
+ **
+ ******************************************************************************/
+__attribute__((always_inline)) inline void _reset_mppt(MPPT *_mppt) {
+    _mppt->v_in = 0;
+    _mppt->i_in = 0;
+    _mppt->v_out = 0;
+    _mppt->watts = 0;
+    _mppt->flags = 0;
+}
+
+/******************************************************************************
+ ** Function:    tick_mppt
+ **
+ ** Description: Tick connection timer or reset struct values for mppt
+ **
+ ** Parameters:  None
+ ** Return:      None
+ **
+ ******************************************************************************/
+__attribute__((always_inline)) inline void _tick_mppt(MPPT *_mppt) {
+    if (_mppt->con_tim)
+    {
+        _mppt->con_tim--;
+    }
+    else
+    {
+        _reset_mppt(_mppt);
+    }
+}
 
 /******************************************************************************
  ** Function:    BOD_IRQHandler
@@ -113,8 +169,9 @@ SysTick_Handler(void)
 
         // Average power stats
         esc.avg_power += esc.watts;
-        mppt1.avg_power += mppt1.watts;
-        mppt2.avg_power += mppt2.watts;
+        mppt[0].avg_power += mppt[0].watts;
+        mppt[1].avg_power += mppt[1].watts;
+        mppt[2].avg_power += mppt[2].watts;
         stats.avg_power_counter++;
     }
     else if (second_tenths == 5)
@@ -144,8 +201,9 @@ SysTick_Handler(void)
     // Time sensitive Calculations
     esc.watt_hrs += (esc.watts / SYSTICK_HOUR_DIV);
 
-    mppt1.watt_hrs += (mppt1.watts / SYSTICK_HOUR_DIV);
-    mppt2.watt_hrs += (mppt2.watts / SYSTICK_HOUR_DIV);
+    mppt[0].watt_hrs += (mppt[0].watts / SYSTICK_HOUR_DIV);
+    mppt[1].watt_hrs += (mppt[1].watts / SYSTICK_HOUR_DIV);
+    mppt[2].watt_hrs += (mppt[2].watts / SYSTICK_HOUR_DIV);
 
     bmu.watt_hrs += (bmu.watts / SYSTICK_HOUR_DIV);
 
@@ -158,22 +216,9 @@ SysTick_Handler(void)
         clock.t_ms = 0;
         clock.t_s++;
 
-        if (mppt1.con_tim)
-        {
-            mppt1.con_tim--;
-        }
-        else
-        {
-            reset_mppt(&mppt1);
-        }
-        if (mppt2.con_tim)
-        {
-            mppt2.con_tim--;
-        }
-        else
-        {
-            reset_mppt(&mppt2);
-        }
+        _tick_mppt(&(mppt[0]));
+        _tick_mppt(&(mppt[1]));
+        _tick_mppt(&(mppt[2]));
         if (shunt.con_tim)
         {
             shunt.con_tim--;
@@ -186,7 +231,8 @@ SysTick_Handler(void)
         // CAN transceiver seems to struggle to send these and the drive packets above
         // so only send one at a time.
         can_tx1_buf.Frame = 0x00080000;
-        if (clock.t_s % 2) {
+        uint8_t third_second = clock.t_s % 3;
+        if (!third_second) {
             can_tx1_buf.MsgID = config.can_dash_reply + 3;
             if (stats.avg_power_counter)
             {
@@ -196,22 +242,36 @@ SysTick_Handler(void)
             {
                 can_tx1_buf.DataA = 0;
             }
-            can_tx1_buf.DataB = conv_float_uint((mppt1.watt_hrs + mppt2.watt_hrs));
+            can_tx1_buf.DataB = conv_float_uint(mppt[0].watt_hrs + mppt[1].watt_hrs + mppt[2].watt_hrs);
             can1_send_message(&can_tx1_buf);
         }
-        else
+        else if (third_second == 1)
         {
             if (stats.avg_power_counter)
             {
                 can_tx1_buf.MsgID = config.can_dash_reply + 4;
-                can_tx1_buf.DataA = conv_float_uint(mppt1.avg_power / stats.avg_power_counter);
-                can_tx1_buf.DataB = conv_float_uint(mppt2.avg_power / stats.avg_power_counter);
+                can_tx1_buf.DataA = conv_float_uint(mppt[1].avg_power / stats.avg_power_counter);
+                can_tx1_buf.DataB = conv_float_uint(mppt[2].avg_power / stats.avg_power_counter);
+                can1_send_message(&can_tx1_buf);
+            }
+        }
+        else
+        {
+            if (mppt[0].con_tim && stats.avg_power_counter)
+            {
+                can_tx1_buf.MsgID = config.can_dash_reply + 4;
+                can_tx1_buf.DataA = conv_float_uint(mppt[0].avg_power / stats.avg_power_counter);
+                can_tx1_buf.DataB = 0;
                 can1_send_message(&can_tx1_buf);
             }
         }
 
         // Store data in eeprom every second
         persistent_store();
+
+        can_tx1_buf.Frame = 0x00000000;
+        can_tx1_buf.MsgID = config.can_mppt0;
+        can2_send_message(&can_tx1_buf);
 
         can_tx1_buf.Frame = 0x00000000;
         can_tx1_buf.MsgID = config.can_mppt1;
@@ -237,23 +297,6 @@ SysTick_Handler(void)
             }
         }
     }
-}
-
-/******************************************************************************
- ** Function:    reset_mppt
- **
- ** Description: Reset mppt values
- **
- ** Parameters:  None
- ** Return:      None
- **
- ******************************************************************************/
-__attribute__((always_inline)) void reset_mppt(MPPT *_mppt) {
-    _mppt->v_in = 0;
-    _mppt->i_in = 0;
-    _mppt->v_out = 0;
-    _mppt->watts = 0;
-    _mppt->flags = 0;
 }
 
 /******************************************************************************
@@ -326,15 +369,20 @@ can1_unpack(CAN_MSG *_msg)
 void
 can2_unpack(CAN_MSG *_msg)
 {
-    if (_msg->MsgID == config.can_mppt1 + MPPT_RPLY)
+    if (_msg->MsgID == config.can_mppt0 + MPPT_RPLY)
     {
         mppt_data_transfer(_msg);
-        mppt_data_extract(&mppt1, _msg);
+        mppt_data_extract(&(mppt[0]), _msg);
+    }
+    else if (_msg->MsgID == config.can_mppt1 + MPPT_RPLY)
+    {
+        mppt_data_transfer(_msg);
+        mppt_data_extract(&(mppt[1]), _msg);
     }
     else if (_msg->MsgID == config.can_mppt2 + MPPT_RPLY)
     {
         mppt_data_transfer(_msg);
-        mppt_data_extract(&mppt2, _msg);
+        mppt_data_extract(&(mppt[2]), _msg);
     }
 }
 
@@ -367,7 +415,7 @@ mppt_data_extract(MPPT *_mppt, CAN_MSG *_msg)
     _v_out |= ((_data_b & 0xFF00) >> 8);         // Masking and shifting the lower 8 LSB
     _v_out *= 2.10;                              // Scaling
 
-    _mppt->flags = _data_a & 0xF0;
+    _mppt->flags = (_data_a & 0xF0) >> 4;
     _mppt->tmp = ((_data_b & 0xFF0000) >> 16);
     _mppt->v_in = _v_in;
     _mppt->i_in = _i_in;
@@ -743,7 +791,7 @@ main_fault_check(void)
         force_buzzer(100);
     }
 
-    if (mppt1.i_in == 0 || mppt2.i_in == 0)
+    if (!(mppt[1].i_in && mppt[2].i_in))
     {
         SET_STATS_NO_ARR_HV
     }
@@ -757,7 +805,8 @@ main_fault_check(void)
         drive.speed_rpm = 0;
         return 2;
     }
-    if ((mppt1.flags & 0x28) || (mppt2.flags & 0x28) || (bmu.status & 0x117) || (!shunt.con_tim))
+    if ((mppt[0].flags & 0xF) || (mppt[1].flags & 0xF) || (mppt[2].flags & 0xF)
+            || (bmu.status & 0x117) || (!shunt.con_tim))
     {
         return 1;
     }
@@ -1113,8 +1162,9 @@ persistent_load(void)
     stats.odometer_tr = conv_uint_float(ee_read(ADD_ODOTR));
 
     bmu.watt_hrs = conv_uint_float(ee_read(ADD_BMUWHR));
-    mppt1.watt_hrs = conv_uint_float(ee_read(ADD_MPPT1WHR));
-    mppt2.watt_hrs = conv_uint_float(ee_read(ADD_MPPT2WHR));
+    mppt[0].watt_hrs = conv_uint_float(ee_read(ADD_MPPT0WHR));
+    mppt[1].watt_hrs = conv_uint_float(ee_read(ADD_MPPT1WHR));
+    mppt[2].watt_hrs = conv_uint_float(ee_read(ADD_MPPT2WHR));
 
     uint32_t *conf_add = (uint32_t *)(&config);
     *conf_add++ = ee_read(ADD_CONF1);
@@ -1193,12 +1243,13 @@ persistent_store(void)
     {
         ee_write(ADD_ODO, conv_float_uint(stats.odometer));
         ee_write(ADD_ODOTR, conv_float_uint(stats.odometer_tr));
+        ee_write(ADD_MPPT0WHR, conv_float_uint(mppt[0].watt_hrs));
     }
     else
     {
         ee_write(ADD_BMUWHR, conv_float_uint(bmu.watt_hrs));
-        ee_write(ADD_MPPT1WHR, conv_float_uint(mppt1.watt_hrs));
-        ee_write(ADD_MPPT2WHR, conv_float_uint(mppt2.watt_hrs));
+        ee_write(ADD_MPPT1WHR, conv_float_uint(mppt[1].watt_hrs));
+        ee_write(ADD_MPPT2WHR, conv_float_uint(mppt[2].watt_hrs));
     }
 }
 
@@ -1571,7 +1622,7 @@ main(void)
             menu.menus[menu.menu_pos]();
         }
         main_input_check();
-        stats.errors &= 0b11100111;
+        CLR_STATS_FAULT;
         stats.errors |= main_fault_check() << 3;
         if (!(stats.errors & (0x2 << 3)))
         {

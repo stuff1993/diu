@@ -337,6 +337,7 @@ struct STATS_STRUCT
 #define CLR_STATS_SWOC_ACK	stats.errors &= 0xFE;
 #define CLR_STATS_HWOC_ACK	stats.errors &= 0xFD;
 #define CLR_STATS_COMMS		stats.errors &= 0xFB;
+#define CLR_STATS_FAULT		stats.errors &= 0xE7;
 #define CLR_STATS_NO_ARR_HV	stats.errors &= 0xDF;
 #define CLR_STATS_BMU_ACK	stats.errors &= 0xBF;
 #define CLR_STATS_STOP		stats.errors &= 0x7F;
@@ -390,6 +391,7 @@ typedef struct CAR_CONFIG_STRUCT
 	uint16_t can_dash_request;
 	uint16_t can_shunt;
 	uint16_t can_bmu;
+	uint16_t can_mppt0;
 	uint16_t can_mppt1;
 	uint16_t can_mppt2;
 

@@ -8,7 +8,9 @@
 #ifndef MENU_H_
 #define MENU_H_
 
-#define	MAX_MENU_ITEMS 19
+#include "struct.h"
+
+#define	MAX_MENU_ITEMS 20
 #define ERROR_ITEMS 4
 
 #define EROW  "                    "
@@ -69,6 +71,7 @@ void menu_escBus(void);
 void menu_home(void);
 void menu_controls(void);
 void menu_cruise(void);
+void menu_MPPT0(void);
 void menu_MPPT1(void);
 void menu_MPPT2(void);
 void menu_MPPTPower(void);
@@ -94,6 +97,7 @@ void _lcd_putTitle(char*);
 void _lcd_padding(int row, int pos, int len);
 void _buffer_rotate_right(char *_buf, int _len);
 void _buffer_rotate_left(char *_buf, int _len);
+void _menu_MPPT(MPPT *_mppt);
 
 void menu_inc(uint8_t *_pos, uint8_t _total);
 void menu_dec(uint8_t *_pos, uint8_t _total);
