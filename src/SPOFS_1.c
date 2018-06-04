@@ -1367,7 +1367,7 @@ engage_contactors(void)
 {
     C_1_ON
     SET_STATS_C_1
-    delayMs(1, 5000);
+    delayMs(1, 2000);
     C_2_3_ON
     SET_STATS_C_2_3
 }
