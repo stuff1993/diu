@@ -267,7 +267,9 @@ menu_escBus (void)
   lcd_putstring(2, 0, buffer);
   PAD_ROW(2, len)
 
-  lcd_putstring(3, 0, EROW);
+  len = sprintf(buffer, "CON1: %d   CON23: %d", STATS_C_1, STATS_C_2_3);
+  lcd_putstring(3, 0, buffer);
+  PAD_ROW(3, len)
 }
 
 /******************************************************************************

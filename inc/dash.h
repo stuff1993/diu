@@ -82,6 +82,13 @@
 #define BLINKER_L_ON    LPC_GPIO3->FIOSET |= (1<<25);
 #define BLINKER_L_OFF   LPC_GPIO3->FIOCLR |= (1<<25);
 
+// Contactor drivers
+#define C_2_3_ON        LPC_GPIO1->FIOSET |= (1<<19);
+#define C_2_3_OFF       LPC_GPIO1->FIOCLR |= (1<<19);
+
+#define C_1_ON          LPC_GPIO1->FIOSET |= (1<<20);
+#define C_1_OFF         LPC_GPIO1->FIOCLR |= (1<<20);
+
 #define REVERSE_ON      LPC_GPIO1->FIOSET |= (1<<26);
 #define REVERSE_OFF     LPC_GPIO1->FIOCLR |= (1<<26);
 
@@ -180,5 +187,7 @@ void motorcontroller_init(void);
 void buzzer(uint8_t val);
 void force_buzzer(uint8_t val);
 void BOD_init(void);
+void engage_contactors(void);
+void disengage_contactors(void);
 
 #endif /* DASH_H_ */

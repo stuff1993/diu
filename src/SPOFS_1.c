@@ -116,22 +116,15 @@ SysTick_Handler(void)
         mppt1.avg_power += mppt1.watts;
         mppt2.avg_power += mppt2.watts;
         stats.avg_power_counter++;
-
+    }
+    else if (second_tenths == 5)
+    {
         // Light control message
         // If hazards, set both left and right
         can_tx1_buf.Frame = 0x00080000;
         can_tx1_buf.MsgID = config.can_dash_reply;
         can_tx1_buf.DataA = STATS_LEFT | (STATS_RIGHT << 1) | (STATS_BRAKE << 2) | (MECH_BRAKE << 3) | STATS_HAZARDS | (STATS_HAZARDS << 1);
         can_tx1_buf.DataB = thr_pos << 16 | rgn_pos;
-        can1_send_message(&can_tx1_buf);
-    }
-    else if ((second_tenths % 5 == 2) && !(bmu.status & 0x107))
-    {
-        // Every 50ms send ignition packet
-        can_tx1_buf.Frame = 0x00080000;
-        can_tx1_buf.MsgID = config.can_control + 5;
-        can_tx1_buf.DataA = 0x00600000;
-        can_tx1_buf.DataB = 0;
         can1_send_message(&can_tx1_buf);
     }
 
@@ -141,6 +134,11 @@ SysTick_Handler(void)
         {
             BUZZER_OFF
         }
+    }
+
+    if (bmu.status & 0x107)
+    {
+        disengage_contactors();
     }
 
     // Time sensitive Calculations
@@ -1356,6 +1354,45 @@ led_test(void)
 
 /******************************************************************************
  **
+ ** Function:    engage_contactors
+ **
+ ** Description: Engage contactors on car start
+ **
+ ** Parameters:  None
+ ** Return:      None
+ **
+ ******************************************************************************/
+void
+engage_contactors(void)
+{
+    C_1_ON
+    SET_STATS_C_1
+    delayMs(1, 5000);
+    C_2_3_ON
+    SET_STATS_C_2_3
+}
+
+/******************************************************************************
+ **
+ ** Function:    disengage_contactors
+ **
+ ** Description: Disengage contactors on bmu OverV, UnderV or OverT
+ **
+ ** Parameters:  None
+ ** Return:      None
+ **
+ ******************************************************************************/
+void
+disengage_contactors(void)
+{
+    C_1_OFF
+    CLR_STATS_C_1
+    C_2_3_OFF
+    CLR_STATS_C_2_3
+}
+
+/******************************************************************************
+ **
  ** Function:    motorcontroller_init
  **
  ** Description: Waits for heartbeat from motorcontroller before sending 0x502 packet
@@ -1469,6 +1506,8 @@ main(void)
     lcd_clear();
 
     led_test();
+
+    engage_contactors();
 
     motorcontroller_init();
 

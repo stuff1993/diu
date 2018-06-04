@@ -260,8 +260,8 @@ struct STATS_STRUCT
 #define STATS_RIGHT         ((stats.flags & 0x0080) >> 7)
 #define STATS_BRAKE         ((stats.flags & 0x0100) >> 8)
 #define STATS_CONF_CHANGED  ((stats.flags & 0x0200) >> 9)
-#define STATS_UNUSED2       ((stats.flags & 0x0400) >> 10)
-#define STATS_UNUSED3       ((stats.flags & 0x0800) >> 11)
+#define STATS_C_1           ((stats.flags & 0x0400) >> 10)
+#define STATS_C_2_3         ((stats.flags & 0x0800) >> 11)
 #define STATS_UNUSED4       ((stats.flags & 0x1000) >> 12)
 #define STATS_UNUSED5       ((stats.flags & 0x2000) >> 13)
 #define STATS_UNUSED6       ((stats.flags & 0x4000) >> 14)
@@ -277,8 +277,8 @@ struct STATS_STRUCT
 #define SET_STATS_RIGHT			stats.flags |= 0x0080;
 #define SET_STATS_BRAKE			stats.flags |= 0x0100;
 #define SET_STATS_CONF_CHANGED	stats.flags |= 0x0200;
-#define SET_STATS_UNUSED2		stats.flags |= 0x0400;
-#define SET_STATS_UNUSED3		stats.flags |= 0x0800;
+#define SET_STATS_C_1           stats.flags |= 0x0400;
+#define SET_STATS_C_2_3         stats.flags |= 0x0800;
 #define SET_STATS_UNUSED4		stats.flags |= 0x1000;
 #define SET_STATS_UNUSED5		stats.flags |= 0x2000;
 #define SET_STATS_UNUSED6		stats.flags |= 0x4000;
@@ -294,8 +294,8 @@ struct STATS_STRUCT
 #define CLR_STATS_RIGHT			stats.flags &= 0xFF7F;
 #define CLR_STATS_BRAKE			stats.flags &= 0xFEFF;
 #define CLR_STATS_CONF_CHANGED	stats.flags &= 0xFDFF;
-#define CLR_STATS_UNUSED2		stats.flags &= 0xFBFF;
-#define CLR_STATS_UNUSED3		stats.flags &= 0xF7FF;
+#define CLR_STATS_C_1           stats.flags &= 0xFBFF;
+#define CLR_STATS_C_2_3         stats.flags &= 0xF7FF;
 #define CLR_STATS_UNUSED4		stats.flags &= 0xEFFF;
 #define CLR_STATS_UNUSED5		stats.flags &= 0xDFFF;
 #define CLR_STATS_UNUSED6		stats.flags &= 0xBFFF;
@@ -311,8 +311,8 @@ struct STATS_STRUCT
 #define TOG_STATS_RIGHT			stats.flags ^= 0x0080;
 #define TOG_STATS_BRAKE			stats.flags ^= 0x0100;
 #define TOG_STATS_CONF_CHANGED	stats.flags ^= 0x0200;
-#define TOG_STATS_UNUSED2		stats.flags ^= 0x0400;
-#define TOG_STATS_UNUSED3		stats.flags ^= 0x0800;
+#define TOG_STATS_C_1           stats.flags ^= 0x0400;
+#define TOG_STATS_C_2_3         stats.flags ^= 0x0800;
 #define TOG_STATS_UNUSED4		stats.flags ^= 0x1000;
 #define TOG_STATS_UNUSED5		stats.flags ^= 0x2000;
 #define TOG_STATS_UNUSED6		stats.flags ^= 0x4000;
