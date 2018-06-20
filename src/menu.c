@@ -307,7 +307,7 @@ menu_home (void)
   else if (mppt[2].flags & 0xF)                   {sprintf(buffer + 11, "Err:MPPT2");}
   else if (bmu.status & 0x00001FBF)               {sprintf(buffer + 11, "Err:BMU  ");}
   else if (STATS_NO_ARR_HV)                       {sprintf(buffer + 11, "Err:ARRHV");}
-  else if (!(mppt[1].con_tim || mppt[2].con_tim)) {sprintf(buffer + 11, "Err:NoARR");}
+  else if (!(mppt[1].con_tim && mppt[2].con_tim)) {sprintf(buffer + 11, "Err:NoARR");}
   else if (!(shunt.con_tim))                      {sprintf(buffer + 11, "Err:NoSHT");}
   else                                            {sprintf(buffer + 11, "V: %05.1fV", shunt.bus_v);}
   lcd_putstring(3, 0, buffer);
@@ -454,7 +454,7 @@ menu_cruise(void)
 /******************************************************************************
  ** Function name:  _menu_MPPT
  **
- ** Description:    MPPT1 information screen
+ ** Description:    MPPT information screen
  **
  ** Parameters:     None
  ** Returned value: None
@@ -544,15 +544,15 @@ menu_MPPTPower (void)
 
   _lcd_putTitle("-POWER IN-");
 
-  len = sprintf(buffer, "MPPT1: %.2fWh", mppt[1].watt_hrs);
+  len = sprintf(buffer, "M1:%5.1fWh MX:%4.1fWh", mppt[1].watt_hrs, mppt[0].watt_hrs);
   lcd_putstring(1, 0, buffer);
   PAD_ROW(1, len)
 
-  len = sprintf(buffer, "MPPT2: %.2fWh", mppt[2].watt_hrs);
+  len = sprintf(buffer, "M2:%5.1fWh", mppt[2].watt_hrs);
   lcd_putstring(2, 0, buffer);
   PAD_ROW(2, len)
 
-  len = sprintf(buffer, "TOTAL: %.2fWh", mppt[0].watt_hrs + mppt[1].watt_hrs + mppt[2].watt_hrs);
+  len = sprintf(buffer, "TT:%5.1fWh", mppt[0].watt_hrs + mppt[1].watt_hrs + mppt[2].watt_hrs);
   lcd_putstring(3, 0, buffer);
   PAD_ROW(3, len)
 
@@ -625,7 +625,7 @@ menu_motor (void)
       }
       break;
   }
-  len = sprintf(buffer, "ERROR: 0x%02x", esc.error);
+  len = sprintf(buffer, "Error: 0x%02x", esc.error);
   lcd_putstring(3,0, buffer);
   PAD_ROW(3, len)
 
@@ -679,7 +679,7 @@ menu_battery (void)
     case 1:
       _lcd_putTitle("-BAT WHR-");
 
-      len = sprintf(buffer, "Total: %.3f W/hrs", shunt.watt_hrs);
+      len = sprintf(buffer, "Total: %.3f Wh", shunt.watt_hrs);
       lcd_putstring(1, 0, buffer);
       PAD_ROW(1, len)
 
