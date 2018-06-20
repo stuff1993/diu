@@ -28,7 +28,7 @@
 #define MIN_CELL_THRESHOLD  2500
 
 // CAN offsets
-#define BMU_INFO        	0xF4
+#define BMU_INFO            0xF4
 #define MPPT_RPLY			0x60
 
 // Configuration Defaults
@@ -38,6 +38,7 @@
 #define CAN_DASH_REQUEST	0x520
 #define CAN_SHUNT			0x530
 #define CAN_BMU				0x600
+#define CAN_MPPT0           0x71F
 #define CAN_MPPT1			0x716
 #define CAN_MPPT2			0x719
 #define WHEEL_D				0.557f
@@ -81,6 +82,13 @@
 
 #define BLINKER_L_ON    LPC_GPIO3->FIOSET |= (1<<25);
 #define BLINKER_L_OFF   LPC_GPIO3->FIOCLR |= (1<<25);
+
+// Contactor drivers
+#define C_2_3_ON        LPC_GPIO1->FIOSET |= (1<<19);
+#define C_2_3_OFF       LPC_GPIO1->FIOCLR |= (1<<19);
+
+#define C_1_ON          LPC_GPIO1->FIOSET |= (1<<20);
+#define C_1_OFF         LPC_GPIO1->FIOCLR |= (1<<20);
 
 #define REVERSE_ON      LPC_GPIO1->FIOSET |= (1<<26);
 #define REVERSE_OFF     LPC_GPIO1->FIOCLR |= (1<<26);
@@ -154,6 +162,7 @@
 #define ADD_DRV2_CONF2	17
 #define ADD_DRV3_CONF1	18
 #define ADD_DRV3_CONF2	19
+#define ADD_MPPT0WHR	20
 
 // Function Prototypes
 void main_driver_check(void);
@@ -179,5 +188,7 @@ void motorcontroller_init(void);
 void buzzer(uint8_t val);
 void force_buzzer(uint8_t val);
 void BOD_init(void);
+void engage_contactors(void);
+void disengage_contactors(void);
 
 #endif /* DASH_H_ */
