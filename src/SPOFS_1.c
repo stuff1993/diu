@@ -76,6 +76,9 @@ CAN_MSG can_tx2_buf =
 CAN_MSG can_tx3_buf =
     {0, 0, 0, 0};
 
+LAP_TIMER lap_timer =
+    {0, 0, 0, 0, 0, 0, 0, 0, 0};
+
 volatile unsigned char SWITCH_IO = 0;
 
 uint16_t thr_pos = 0;
@@ -91,7 +94,8 @@ uint16_t rgn_pos = 0;
  ** Return:      None
  **
  ******************************************************************************/
-__attribute__((always_inline)) inline void _reset_mppt(MPPT *_mppt) {
+__attribute__((always_inline)) inline void
+_reset_mppt(MPPT *_mppt) {
     _mppt->v_in = 0;
     _mppt->i_in = 0;
     _mppt->v_out = 0;
@@ -108,7 +112,8 @@ __attribute__((always_inline)) inline void _reset_mppt(MPPT *_mppt) {
  ** Return:      None
  **
  ******************************************************************************/
-__attribute__((always_inline)) inline void _tick_mppt(MPPT *_mppt) {
+__attribute__((always_inline)) inline void
+_tick_mppt(MPPT *_mppt) {
     if (_mppt->con_tim)
     {
         _mppt->con_tim--;
@@ -201,14 +206,27 @@ SysTick_Handler(void)
     // Time sensitive Calculations
     esc.watt_hrs += (esc.watts / SYSTICK_HOUR_DIV);
 
-    mppt[0].watt_hrs += (mppt[0].watts / SYSTICK_HOUR_DIV);
-    mppt[1].watt_hrs += (mppt[1].watts / SYSTICK_HOUR_DIV);
-    mppt[2].watt_hrs += (mppt[2].watts / SYSTICK_HOUR_DIV);
+    float mppt0_wh = (mppt[0].watts / SYSTICK_HOUR_DIV);
+    mppt[0].watt_hrs += mppt0_wh;
+    float mppt1_wh = (mppt[1].watts / SYSTICK_HOUR_DIV);
+    mppt[1].watt_hrs += mppt1_wh;
+    float mppt2_wh = (mppt[2].watts / SYSTICK_HOUR_DIV);
+    mppt[2].watt_hrs += mppt2_wh;
 
-    bmu.watt_hrs += (bmu.watts / SYSTICK_HOUR_DIV);
+    float bmu_wh = (bmu.watts / SYSTICK_HOUR_DIV);
+    bmu.watt_hrs += bmu_wh;
 
     stats.odometer += fabsf(esc.velocity_kmh / SYSTICK_HOUR_DIV);
     stats.odometer_tr += fabsf(esc.velocity_kmh / SYSTICK_HOUR_DIV);
+
+    if (menu.driver == 1)
+    {
+        // Don't use esc consumption as excludes other drains on system (ie the DIU)
+        float mppt_t_wh = mppt0_wh + mppt1_wh + mppt2_wh;
+        lap_timer.current_ms += SYSTICK_INT_MS;
+        lap_timer.current_power_in += mppt_t_wh;
+        lap_timer.current_power_out += bmu_wh - mppt_t_wh;
+    }
 
     // Calculate time
     if (clock.t_ms >= SYSTICK_SEC_COUNT)

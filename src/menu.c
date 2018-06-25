@@ -82,7 +82,7 @@ CONFIG_DISPLAY options[NUM_CONFIG] =
  **
  ******************************************************************************/
 void
-menu_errOnStart (void)
+menu_errOnStart(void)
 {
     lcd_putstring(0, 0, "**    CAUTION!    **");
     lcd_putstring(1, 0, EROW);
@@ -118,7 +118,7 @@ menu_esc_wait(void)
  **
  ******************************************************************************/
 void
-menu_driver (void)
+menu_driver(void)
 {
     menu.driver = 255;
     menu.submenu_pos = 0;
@@ -201,7 +201,7 @@ menu_driver (void)
  **
  ******************************************************************************/
 void
-menu_intro (void)
+menu_intro(void)
 {
     lcd_putstring(0, 0, "**  WSU ASC 2018  **");
     lcd_putstring(1, 0, EROW);
@@ -234,7 +234,7 @@ menu_intro (void)
  **
  ******************************************************************************/
 void
-menu_info (void)
+menu_info(void)
 {
     _lcd_putTitle("-INFO-");
     lcd_putstring(1, 0, "CRIMSON Dash 4.0    ");
@@ -252,7 +252,7 @@ menu_info (void)
  **
  ******************************************************************************/
 void
-menu_escBus (void)
+menu_escBus(void)
 {
     char buffer[20];
     int len;
@@ -282,7 +282,7 @@ menu_escBus (void)
  **
  ******************************************************************************/
 void
-menu_home (void)
+menu_home(void)
 {
     char buffer[20];
 
@@ -323,7 +323,7 @@ menu_home (void)
  **
  ******************************************************************************/
 void
-menu_controls (void)
+menu_controls(void)
 {
     char buffer[20];
 
@@ -537,7 +537,7 @@ menu_MPPT2(void)
  **
  ******************************************************************************/
 void
-menu_MPPTPower (void)
+menu_MPPTPower(void)
 {
     char buffer[20];
     int len;
@@ -575,7 +575,7 @@ menu_MPPTPower (void)
  **
  ******************************************************************************/
 void
-menu_motor (void)
+menu_motor(void)
 {
     char buffer[20];
     int len;
@@ -651,7 +651,7 @@ menu_motor (void)
  **
  ******************************************************************************/
 void
-menu_battery (void)
+menu_battery(void)
 {
     char buffer[20];
     int len;
@@ -789,7 +789,7 @@ menu_average_power (void)
  **
  ******************************************************************************/
 void
-menu_temperature (void)
+menu_temperature(void)
 {
     char buffer[20];
     int len;
@@ -851,7 +851,7 @@ menu_temperature (void)
  **
  ******************************************************************************/
 void
-menu_debug (void)
+menu_debug(void)
 {
     char buffer[20];
     int len;
@@ -882,7 +882,7 @@ menu_debug (void)
  **
  ******************************************************************************/
 void
-menu_config (void)
+menu_config(void)
 {
     char buffer[20];
     int len;
@@ -1067,7 +1067,7 @@ menu_config (void)
  **
  ******************************************************************************/
 void
-menu_errors (void)
+menu_errors(void)
 {
     char buffer[20];
     int len;
@@ -1114,7 +1114,7 @@ menu_errors (void)
  **
  ******************************************************************************/
 void
-menu_options (void)
+menu_options(void)
 {
     char buffer[20];
     int len;
@@ -1229,7 +1229,7 @@ menu_options (void)
  **
  ******************************************************************************/
 void
-menu_peaks (void)
+menu_peaks(void)
 {
     char buffer[20];
     int len;
@@ -1265,7 +1265,7 @@ menu_peaks (void)
  **
  ******************************************************************************/
 void
-menu_runtime (void)
+menu_runtime(void)
 {
     char buffer[20];
     int len;
@@ -1295,7 +1295,7 @@ menu_runtime (void)
  **
  ******************************************************************************/
 void
-menu_odometer (void)
+menu_odometer(void)
 {
     char buffer[20];
     int len;
@@ -1342,7 +1342,7 @@ menu_odometer (void)
  **
  ******************************************************************************/
 void
-menu_swoc (void) // errors[0]
+menu_swoc(void) // errors[0]
 {
     _lcd_putTitle("-SWOC ERR-");
     lcd_putstring(1,0, "*******ERROR!*******");
@@ -1374,7 +1374,7 @@ menu_swoc (void) // errors[0]
  **
  ******************************************************************************/
 void
-menu_hwoc (void) // errors[1]
+menu_hwoc(void) // errors[1]
 {
     _lcd_putTitle("-HWOC ERR-");
     lcd_putstring(1,0, "*******ERROR!*******");
@@ -1405,7 +1405,7 @@ menu_hwoc (void) // errors[1]
  **
  ******************************************************************************/
 void
-menu_comms (void) // errors[2]
+menu_comms(void) // errors[2]
 {
     _lcd_putTitle("-COMMS-");
     lcd_putstring(1,0, "    CHECK  COMMS    ");
@@ -1449,7 +1449,7 @@ menu_comms (void) // errors[2]
  **
  ******************************************************************************/
 void
-menu_battery_error (void) // errors[3]
+menu_battery_error(void) // errors[3]
 {
     char buffer[20];
     int len;
@@ -1481,7 +1481,7 @@ menu_battery_error (void) // errors[3]
  **
  ******************************************************************************/
 void
-_lcd_putTitle (char *_title)
+_lcd_putTitle(char *_title)
 {
     char buffer[20];
     char spd[11];
@@ -1524,7 +1524,7 @@ _lcd_putTitle (char *_title)
  **
  ******************************************************************************/
 void
-_lcd_padding (int row, int pos, int len)
+_lcd_padding(int row, int pos, int len)
 {
     char buffer[len];
     sprintf(buffer, "%*s", len, "");
@@ -1543,7 +1543,7 @@ _lcd_padding (int row, int pos, int len)
  **
  ******************************************************************************/
 void
-_buffer_rotate_right (char *_buf, int _len)
+_buffer_rotate_right(char *_buf, int _len)
 {
     char _last = *(_buf + _len - 1);
     char* _cur = (_buf + _len - 1);
@@ -1566,7 +1566,7 @@ _buffer_rotate_right (char *_buf, int _len)
  **
  ******************************************************************************/
 void
-_buffer_rotate_left (char *_buf, int _len)
+_buffer_rotate_left(char *_buf, int _len)
 {
     char _first = *_buf;
     char* _cur = _buf;
@@ -1620,7 +1620,7 @@ menu_dec(uint8_t *_pos, uint8_t _total)
  **
  ******************************************************************************/
 void
-menu_init (void)
+menu_init(void)
 {
     menu.errors[0] = menu_swoc;
     menu.errors[1] = menu_hwoc;

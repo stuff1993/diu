@@ -9,8 +9,8 @@
 #endif
 
 #define SYSTICK_INT_MS    10
-#define SYSTICK_SEC_COUNT (1000 / SYSTICK_INT_MS)
-#define SYSTICK_HOUR_DIV  3600000.0 / SYSTICK_INT_MS
+#define SYSTICK_SEC_COUNT (1000 / SYSTICK_INT_MS) // Ticks in a second
+#define SYSTICK_HOUR_DIV  3600000.0f / SYSTICK_INT_MS // */s hourly divisor (W -> Whr)
 
 #define MAX_RGN_DZ        0.15  // V at pin
 #define MIN_RGN_DZ        0.15
