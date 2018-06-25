@@ -186,7 +186,7 @@ menu_driver (void)
         if (btn_release_right())
         {
             // ((pos / width) * width) + ((pos + width - 1) % width) -- Get row number, get item at start of row number, get next width looping on width
-            menu.submenu_pos = ((menu.submenu_pos / 2) * 2) + ((menu.submenu_pos + 1) % 2);
+            menu.submenu_pos = ((menu.submenu_pos / 2) * 2) + ((menu.submenu_pos + 2 - 1) % 2);
         }
     }
 }

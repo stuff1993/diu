@@ -12,7 +12,7 @@
 
 struct INPUT_STRUCT // in structure for easy logical expansion to other events (on press, timed hold)
 {
-  uint8_t input_dwn;
+    uint8_t input_dwn;
 } inputs;
 
 #define INPUTS_DEC_DWN ((inputs.input_dwn & 0x01) >> 0)
