@@ -164,7 +164,7 @@ SysTick_Handler(void)
     // DIU CAN Heart Beat
     // Every 100 mS send heart beat CAN packets
     uint8_t second_tenths = clock.t_ms % (SYSTICK_SEC_COUNT / 10);
-    if ((!second_tenths) && STATS_ARMED)
+    if (second_tenths == 2 && STATS_ARMED)
     {
         can_tx1_buf.Frame = 0x00080000;
         can_tx1_buf.MsgID = config.can_control + 1;
@@ -179,7 +179,7 @@ SysTick_Handler(void)
         mppt[2].avg_power += mppt[2].watts;
         stats.avg_power_counter++;
     }
-    else if (second_tenths == 5)
+    else if (second_tenths == 7)
     {
         // Light control message
         // If hazards, set both left and right
@@ -222,7 +222,7 @@ SysTick_Handler(void)
     if (menu.driver == 1 && lap_timer.target_ms)
     {
         // Don't use esc consumption as excludes other drains on system (ie the DIU)
-        float mppt_t_wh = mppt0_wh + mppt1_wh + mppt2_wh;
+        uint16_t mppt_t_wh = mppt0_wh + mppt1_wh + mppt2_wh;
         lap_timer.current_ms += SYSTICK_INT_MS;
         lap_timer.current_power_in += mppt_t_wh;
         lap_timer.current_power_out += bmu_wh - mppt_t_wh;
@@ -277,7 +277,7 @@ SysTick_Handler(void)
         {
             if (mppt[0].con_tim && stats.avg_power_counter)
             {
-                can_tx1_buf.MsgID = config.can_dash_reply + 4;
+                can_tx1_buf.MsgID = config.can_dash_reply + 5;
                 can_tx1_buf.DataA = conv_float_uint(mppt[0].avg_power / stats.avg_power_counter);
                 can_tx1_buf.DataB = 0;
                 can1_send_message(&can_tx1_buf);
