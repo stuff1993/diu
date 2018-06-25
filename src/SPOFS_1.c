@@ -219,7 +219,7 @@ SysTick_Handler(void)
     stats.odometer += fabsf(esc.velocity_kmh / SYSTICK_HOUR_DIV);
     stats.odometer_tr += fabsf(esc.velocity_kmh / SYSTICK_HOUR_DIV);
 
-    if (menu.driver == 1)
+    if (menu.driver == 1 && lap_timer.target_ms)
     {
         // Don't use esc consumption as excludes other drains on system (ie the DIU)
         float mppt_t_wh = mppt0_wh + mppt1_wh + mppt2_wh;
