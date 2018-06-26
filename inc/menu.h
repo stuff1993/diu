@@ -10,7 +10,7 @@
 
 #include "struct.h"
 
-#define	MAX_MENU_ITEMS 20
+#define	MAX_MENU_ITEMS 23
 #define ERROR_ITEMS 4
 
 #define EROW  "                    "
@@ -70,6 +70,9 @@ void menu_info(void);
 void menu_escBus(void);
 void menu_home(void);
 void menu_controls(void);
+void menu_lap_timer_last(void);
+void menu_lap_timer_cur(void);
+void menu_lap_timer_setup(void);
 void menu_cruise(void);
 void menu_MPPT0(void);
 void menu_MPPT1(void);

@@ -431,15 +431,16 @@ typedef struct CONFIG_DISPLAY_STRUCT
 
 typedef struct LAP_TIMER_STRUCT
 {
-    uint16_t last_power_in;
-    uint16_t last_power_out;
+    float last_power_in;
+    float last_power_out;
     uint32_t last_ms;
-    uint16_t current_power_in;
-    uint16_t current_power_out;
+    float current_power_in;
+    float current_power_out;
     uint32_t current_ms;
-    uint16_t target_power_in;
-    uint16_t target_power_out;
+    float target_power_in;
+    float target_power_out;
     uint32_t target_ms;
+    uint8_t track;
 } LAP_TIMER;
 
 #endif /* STRUCT_H_ */

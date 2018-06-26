@@ -77,7 +77,7 @@ CAN_MSG can_tx3_buf =
     {0, 0, 0, 0};
 
 LAP_TIMER lap_timer =
-    {0, 0, 0, 0, 0, 0, 0, 0, 0};
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 volatile unsigned char SWITCH_IO = 0;
 
@@ -219,10 +219,10 @@ SysTick_Handler(void)
     stats.odometer += fabsf(esc.velocity_kmh / SYSTICK_HOUR_DIV);
     stats.odometer_tr += fabsf(esc.velocity_kmh / SYSTICK_HOUR_DIV);
 
-    if (menu.driver == 1 && lap_timer.target_ms)
+    if (lap_timer.track)
     {
         // Don't use esc consumption as excludes other drains on system (ie the DIU)
-        uint16_t mppt_t_wh = mppt0_wh + mppt1_wh + mppt2_wh;
+        float mppt_t_wh = mppt0_wh + mppt1_wh + mppt2_wh;
         lap_timer.current_ms += SYSTICK_INT_MS;
         lap_timer.current_power_in += mppt_t_wh;
         lap_timer.current_power_out += bmu_wh - mppt_t_wh;
@@ -1558,8 +1558,8 @@ main(void)
     SystemInit();
     SystemCoreClockUpdate();
 
-    can1_init(BITRATE500K25MHZ);
-    can2_init(BITRATE125K25MHZ);
+    can1_init(BITRATE500K30MHZ);
+    can2_init(BITRATE125K30MHZ);
     CAN_SetACCF(ACCF_BYPASS);
 
     ee_init();
@@ -1649,6 +1649,5 @@ main(void)
         }
         main_lights();
         main_can_handler();
-        //main_driver_check();
     }
 }

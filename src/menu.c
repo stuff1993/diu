@@ -34,6 +34,7 @@ extern uint16_t thr_pos;
 extern uint16_t rgn_pos;
 extern CAR_CONFIG config;
 extern DRIVER_CONFIG drv_config[];
+extern LAP_TIMER lap_timer;
 
 #define NUM_CONFIG 28
 
@@ -348,6 +349,300 @@ menu_controls(void)
 
         sprintf(buffer, "REGEN:        %3d.%d%%", rgn_pos/10,rgn_pos%10);
         lcd_putstring(3, 0, buffer);
+    }
+}
+
+/******************************************************************************
+ ** Function name:  menu_lap_timer_last
+ **
+ ** Description:    Display last lap vs target
+ **
+ ** Parameters:     None
+ ** Returned value: None
+ **
+ ******************************************************************************/
+void
+menu_lap_timer_last(void)
+{
+    char buffer[20];
+    _lcd_putTitle("-LAST LAP-");
+    uint8_t last_min = lap_timer.last_ms / 1000 / 60;
+    uint8_t last_sec = (lap_timer.last_ms - (last_min * 1000 * 60)) / 1000;
+    uint8_t last_ms = (lap_timer.last_ms - (((last_min * 60) + last_sec) * 1000)) / 100;
+    uint8_t tar_min = lap_timer.target_ms / 1000 / 60;
+    uint8_t tar_sec = (lap_timer.target_ms - (tar_min * 1000 * 60)) / 1000;
+    uint8_t tar_ms = (lap_timer.target_ms - (((tar_min * 60) + tar_sec) * 1000)) / 100;
+
+    sprintf(buffer, "T: %02d:%02d.%d %02d:%02d.%d  ", tar_min, tar_sec, tar_ms, last_min, last_sec, last_ms);
+    lcd_putstring(1, 0, buffer);
+
+    sprintf(buffer, "I: %04.1f    %04.1f     ", lap_timer.target_power_in, lap_timer.last_power_in);
+    lcd_putstring(2, 0, buffer);
+
+    sprintf(buffer, "O: %04.1f    %04.1f     ", lap_timer.target_power_out, lap_timer.last_power_out);
+    lcd_putstring(3, 0, buffer);
+
+    if (btn_release_select())
+    {
+        lap_timer.target_ms = lap_timer.last_ms;
+        lap_timer.target_power_in = lap_timer.last_power_in;
+        lap_timer.target_power_out = lap_timer.last_power_out;
+    }
+}
+
+/******************************************************************************
+ ** Function name:  menu_lap_timer_cur
+ **
+ ** Description:    Display current lap vs target
+ **
+ ** Parameters:     None
+ ** Returned value: None
+ **
+ ******************************************************************************/
+void
+menu_lap_timer_cur(void)
+{
+    char buffer[20];
+    _lcd_putTitle("-CUR LAP-");
+    uint8_t cur_min = lap_timer.current_ms / 1000 / 60;
+    uint8_t cur_sec = (lap_timer.current_ms - (cur_min * 1000 * 60)) / 1000;
+    uint8_t cur_ms = (lap_timer.current_ms - (((cur_min * 60) + cur_sec) * 1000)) / 100;
+    uint8_t tar_min = lap_timer.target_ms / 1000 / 60;
+    uint8_t tar_sec = (lap_timer.target_ms - (tar_min * 1000 * 60)) / 1000;
+    uint8_t tar_ms = (lap_timer.target_ms - (((tar_min * 60) + tar_sec) * 1000)) / 100;
+
+    sprintf(buffer, "T: %02d:%02d.%d %02d:%02d.%d  ", tar_min, tar_sec, tar_ms, cur_min, cur_sec, cur_ms);
+    lcd_putstring(1, 0, buffer);
+
+    sprintf(buffer, "I: %04.1f    %04.1f     ", lap_timer.target_power_in, lap_timer.current_power_in);
+    lcd_putstring(2, 0, buffer);
+
+    sprintf(buffer, "O: %04.1f    %04.1f     ", lap_timer.target_power_out, lap_timer.current_power_out);
+    lcd_putstring(3, 0, buffer);
+
+    // BUTTONS
+    uint8_t btn = btn_release_inc_sel();
+    if (btn == 1 && lap_timer.track)
+    {
+        lap_timer.last_ms = lap_timer.current_ms;
+        lap_timer.last_power_in = lap_timer.current_power_in;
+        lap_timer.last_power_out = lap_timer.current_power_out;
+        lap_timer.current_ms = 0;
+        lap_timer.current_power_in = 0;
+        lap_timer.current_power_out = 0;
+    }
+    else if (btn == 2)
+    {
+        if (lap_timer.track)
+        {
+            lap_timer.track = 0;
+            lap_timer.current_ms = 0;
+            lap_timer.current_power_in = 0;
+            lap_timer.current_power_out = 0;
+        }
+        else
+        {
+            lap_timer.track = 1;
+        }
+    }
+}
+
+/******************************************************************************
+ ** Function name:  menu_lap_timer_setup
+ **
+ ** Description:    Setup targets for lap timer
+ **
+ ** Parameters:     None
+ ** Returned value: None
+ **
+ ******************************************************************************/
+void
+menu_lap_timer_setup(void)
+{
+    char buffer[20];
+    menu.submenu_items = 13;
+    _lcd_putTitle("-TARGETS-");
+
+    uint8_t marker_row;
+    uint8_t marker_pos;
+
+    if (menu.submenu_pos < 5)
+    {
+        // Marker over time
+        // Render time on line 2
+        // Render marker at (6 + 3 * pos) / 2
+        // Magic math to jump the time dividers
+        marker_row = 0b10 << 2 | 0b01;
+        marker_pos = menu.submenu_pos + ((6 + menu.submenu_pos) / 2);
+    }
+    else if (menu.submenu_pos < 9)
+    {
+        // Marker over power
+        // Render time on line 1
+        marker_row = 0b01 << 2 | 0b10;
+        marker_pos = menu.submenu_pos - 2;
+    }
+    else
+    {
+        // Marker over power
+        // Render time on line 1
+        marker_row = 0b01 << 2 | 0b10;
+        marker_pos = menu.submenu_pos + 4;
+    }
+    if (clock.blink || MENU_SELECTED)
+    {
+        sprintf(buffer, "%*sV%*s", marker_pos, "", 19 - marker_pos, "");
+        lcd_putstring(marker_row & 0b11, 0, buffer);
+    }
+    else
+    {
+        lcd_putstring(marker_row & 0b11, 0, EROW);
+    }
+    uint8_t min = lap_timer.target_ms / 1000 / 60;
+    uint8_t sec = (lap_timer.target_ms - (min * 1000 * 60)) / 1000;
+    uint8_t ms = (lap_timer.target_ms - (((min * 60) + sec) * 1000)) / 100;
+    sprintf(buffer, "T: %02d:%02d.%d%*s", min, sec, ms, 10, "");
+    lcd_putstring(marker_row >> 2, 0, buffer);
+
+    sprintf(buffer, "I: %04.0f   O: %04.0f   ", lap_timer.target_power_in, lap_timer.target_power_out);
+    lcd_putstring(3, 0, buffer);
+
+    // Buttons
+    if (MENU_SELECTED)
+    {
+        uint8_t btn = btn_release_inc_dec();
+        if (btn == 1)
+        {
+            uint16_t multiplier = 1;
+            switch (menu.submenu_pos)
+            {
+                case 0:
+                    // 10 min
+                    multiplier *= 10;
+                case 1:
+                    // 1 min
+                    multiplier *= 6;
+                case 2:
+                    // 10 sec
+                    multiplier *= 10;
+                case 3:
+                    // 1 sec
+                    multiplier *= 10;
+                case 4:
+                    // 100ms
+                    multiplier *= 100;
+                    lap_timer.target_ms += multiplier;
+                    break;
+                case 5:
+                    // 1000 I
+                    multiplier *= 10;
+                case 6:
+                    // 100 I
+                    multiplier *= 10;
+                case 7:
+                    // 10 I
+                    multiplier *= 10;
+                case 8:
+                    // 1 I
+                    lap_timer.target_power_in += multiplier;
+                    break;
+                case 9:
+                    // 1000 O
+                    multiplier *= 10;
+                case 10:
+                    // 100 O
+                    multiplier *= 10;
+                case 11:
+                    // 10 O
+                    multiplier *= 10;
+                case 12:
+                    // 1 O
+                    lap_timer.target_power_out += multiplier;
+                    break;
+                default:
+                    menu.submenu_pos = 0;
+            }
+        }
+        else if (btn == 2)
+        {
+            uint16_t multiplier = 1;
+            switch (menu.submenu_pos)
+            {
+                case 0:
+                    // 10 min
+                    multiplier *= 10;
+                case 1:
+                    // 1 min
+                    multiplier *= 6;
+                case 2:
+                    // 10 sec
+                    multiplier *= 10;
+                case 3:
+                    // 1 sec
+                    multiplier *= 10;
+                case 4:
+                    // 100ms
+                    multiplier *= 100;
+                    if (lap_timer.target_ms > multiplier)
+                    {
+                        lap_timer.target_ms -= multiplier;
+                    }
+                    break;
+                case 5:
+                    // 1000 I
+                    multiplier *= 10;
+                case 6:
+                    // 100 I
+                    multiplier *= 10;
+                case 7:
+                    // 10 I
+                    multiplier *= 10;
+                case 8:
+                    // 1 I
+                    if (lap_timer.target_power_in > multiplier)
+                    {
+                        lap_timer.target_power_in -= multiplier;
+                    }
+                    break;
+                case 9:
+                    // 1000 O
+                    multiplier *= 10;
+                case 10:
+                    // 100 O
+                    multiplier *= 10;
+                case 11:
+                    // 10 O
+                    multiplier *= 10;
+                case 12:
+                    // 1 O
+                    if (lap_timer.target_power_out > multiplier)
+                    {
+                        lap_timer.target_power_out -= multiplier;
+                    }
+                    break;
+                default:
+                    menu.submenu_pos = 0;
+            }
+        }
+        if (btn_release_select())
+        {
+            CLR_MENU_SELECTED
+        }
+    }
+    else
+    {
+        if (btn_release_increment())
+        {
+            menu_inc(&menu.submenu_pos, menu.submenu_items);
+        }
+        if (btn_release_decrement())
+        {
+            menu_dec(&menu.submenu_pos, menu.submenu_items);
+        }
+        if (btn_release_select())
+        {
+            SET_MENU_SELECTED
+        }
     }
 }
 
@@ -749,7 +1044,7 @@ menu_battery(void)
  **
  ******************************************************************************/
 void
-menu_average_power (void)
+menu_average_power(void)
 {
     char buffer[20];
     int len;
@@ -1085,7 +1380,7 @@ menu_errors(void)
     lcd_putstring(2, 0, buffer);
     PAD_ROW(2, len)
 
-    len = sprintf(buffer, "BMU: 0x%04x", bmu.status);
+    len = sprintf(buffer, "BMU: 0x%04lx", bmu.status);
     lcd_putstring(3, 0, buffer);
     PAD_ROW(3, len)
 
@@ -1646,7 +1941,7 @@ menu_init(void)
             menu.menus[12] = menu_odometer;
             break;
         case 1: // Hot Lap
-            menu.menu_items = 7;
+            menu.menu_items = 10;
             menu.menus[0] = menu_home;
             menu.menus[1] = menu_motor;
             menu.menus[2] = menu_temperature;
@@ -1654,9 +1949,12 @@ menu_init(void)
             menu.menus[4] = menu_options;
             menu.menus[5] = menu_runtime;
             menu.menus[6] = menu_odometer;
+            menu.menus[7] = menu_lap_timer_setup;
+            menu.menus[8] = menu_lap_timer_last;
+            menu.menus[9] = menu_lap_timer_cur;
             break;
         case 2: // Test/Setup
-            menu.menu_items = 20;
+            menu.menu_items = 23;
             menu.menus[0] = menu_home;
             menu.menus[1] = menu_controls;
             menu.menus[2] = menu_cruise;
@@ -1677,6 +1975,9 @@ menu_init(void)
             menu.menus[17] = menu_odometer;
             menu.menus[18] = menu_info;
             menu.menus[19] = menu_escBus;
+            menu.menus[20] = menu_lap_timer_setup;
+            menu.menus[21] = menu_lap_timer_last;
+            menu.menus[22] = menu_lap_timer_cur;
             break;
         case 3: // Display
             menu.menu_items = 11;
