@@ -163,7 +163,7 @@ SysTick_Handler(void)
 
     // DIU CAN Heart Beat
     // Every 100 mS send heart beat CAN packets
-    uint8_t second_tenths = clock.t_ms % (SYSTICK_SEC_COUNT / 10);
+    const uint8_t second_tenths = clock.t_ms % (SYSTICK_SEC_COUNT / 10);
     if (second_tenths == 2 && STATS_ARMED)
     {
         can_tx1_buf.Frame = 0x00080000;
@@ -206,14 +206,14 @@ SysTick_Handler(void)
     // Time sensitive Calculations
     esc.watt_hrs += (esc.watts / SYSTICK_HOUR_DIV);
 
-    float mppt0_wh = (mppt[0].watts / SYSTICK_HOUR_DIV);
+    const float mppt0_wh = (mppt[0].watts / SYSTICK_HOUR_DIV);
     mppt[0].watt_hrs += mppt0_wh;
-    float mppt1_wh = (mppt[1].watts / SYSTICK_HOUR_DIV);
+    const float mppt1_wh = (mppt[1].watts / SYSTICK_HOUR_DIV);
     mppt[1].watt_hrs += mppt1_wh;
-    float mppt2_wh = (mppt[2].watts / SYSTICK_HOUR_DIV);
+    const float mppt2_wh = (mppt[2].watts / SYSTICK_HOUR_DIV);
     mppt[2].watt_hrs += mppt2_wh;
 
-    float bmu_wh = (bmu.watts / SYSTICK_HOUR_DIV);
+    const float bmu_wh = (bmu.watts / SYSTICK_HOUR_DIV);
     bmu.watt_hrs += bmu_wh;
 
     stats.odometer += fabsf(esc.velocity_kmh / SYSTICK_HOUR_DIV);
@@ -222,7 +222,7 @@ SysTick_Handler(void)
     if (lap_timer.track)
     {
         // Don't use esc consumption as excludes other drains on system (ie the DIU)
-        float mppt_t_wh = mppt0_wh + mppt1_wh + mppt2_wh;
+        const float mppt_t_wh = mppt0_wh + mppt1_wh + mppt2_wh;
         lap_timer.current_ms += SYSTICK_INT_MS;
         lap_timer.current_power_in += mppt_t_wh;
         lap_timer.current_power_out += bmu_wh - mppt_t_wh;
@@ -249,7 +249,7 @@ SysTick_Handler(void)
         // CAN transceiver seems to struggle to send these and the drive packets above
         // so only send one at a time.
         can_tx1_buf.Frame = 0x00080000;
-        uint8_t third_second = clock.t_s % 3;
+        const uint8_t third_second = clock.t_s % 3;
         if (!third_second) {
             can_tx1_buf.MsgID = config.can_dash_reply + 3;
             if (stats.avg_power_counter)
@@ -1224,6 +1224,7 @@ persistent_load(void)
 void
 persistent_store(void)
 {
+    uint16_t eestatus = 0;
     if (isnan(stats.odometer))
     {
         stats.odometer = 0.0;
@@ -1237,37 +1238,45 @@ persistent_store(void)
     {
         CLR_STATS_CONF_CHANGED
         uint32_t *conf_add = (uint32_t *)(&(config));
-        ee_write(ADD_CONF1, *conf_add++);
-        ee_write(ADD_CONF2, *conf_add++);
-        ee_write(ADD_CONF3, *conf_add++);
-        ee_write(ADD_CONF4, *conf_add++);
-        ee_write(ADD_CONF5, *conf_add++);
-        ee_write(ADD_CONF6, *conf_add);
+        eestatus |= ee_write(ADD_CONF1, *conf_add++);
+        eestatus |= ee_write(ADD_CONF2, *conf_add++);
+        eestatus |= ee_write(ADD_CONF3, *conf_add++);
+        eestatus |= ee_write(ADD_CONF4, *conf_add++);
+        eestatus |= ee_write(ADD_CONF5, *conf_add++);
+        eestatus |= ee_write(ADD_CONF6, *conf_add);
 
         conf_add = (uint32_t *)(&(drv_config));
-        ee_write(ADD_DRV0_CONF1, *conf_add++);
-        ee_write(ADD_DRV0_CONF2, *conf_add++);
-        ee_write(ADD_DRV1_CONF1, *conf_add++);
-        ee_write(ADD_DRV1_CONF2, *conf_add++);
-        ee_write(ADD_DRV2_CONF1, *conf_add++);
-        ee_write(ADD_DRV2_CONF2, *conf_add++);
-        ee_write(ADD_DRV3_CONF1, *conf_add++);
-        ee_write(ADD_DRV3_CONF2, *conf_add++);
+        eestatus |= ee_write(ADD_DRV0_CONF1, *conf_add++);
+        eestatus |= ee_write(ADD_DRV0_CONF2, *conf_add++);
+        eestatus |= ee_write(ADD_DRV1_CONF1, *conf_add++);
+        eestatus |= ee_write(ADD_DRV1_CONF2, *conf_add++);
+        eestatus |= ee_write(ADD_DRV2_CONF1, *conf_add++);
+        eestatus |= ee_write(ADD_DRV2_CONF2, *conf_add++);
+        eestatus |= ee_write(ADD_DRV3_CONF1, *conf_add++);
+        eestatus |= ee_write(ADD_DRV3_CONF2, *conf_add++);
 
         return;
     }
 
     if (clock.t_s % 2)
     {
-        ee_write(ADD_ODO, conv_float_uint(stats.odometer));
-        ee_write(ADD_ODOTR, conv_float_uint(stats.odometer_tr));
-        ee_write(ADD_MPPT0WHR, conv_float_uint(mppt[0].watt_hrs));
+        eestatus |= ee_write(ADD_ODO, conv_float_uint(stats.odometer));
+        eestatus |= ee_write(ADD_ODOTR, conv_float_uint(stats.odometer_tr));
+        eestatus |= ee_write(ADD_MPPT0WHR, conv_float_uint(mppt[0].watt_hrs));
     }
     else
     {
-        ee_write(ADD_BMUWHR, conv_float_uint(bmu.watt_hrs));
-        ee_write(ADD_MPPT1WHR, conv_float_uint(mppt[1].watt_hrs));
-        ee_write(ADD_MPPT2WHR, conv_float_uint(mppt[2].watt_hrs));
+        eestatus |= ee_write(ADD_BMUWHR, conv_float_uint(bmu.watt_hrs));
+        eestatus |= ee_write(ADD_MPPT1WHR, conv_float_uint(mppt[1].watt_hrs));
+        eestatus |= ee_write(ADD_MPPT2WHR, conv_float_uint(mppt[2].watt_hrs));
+    }
+    if (eestatus & 0x800)
+    {
+        SET_STATS_EEPROM_TO
+    }
+    else
+    {
+        CLR_STATS_EEPROM_TO
     }
 }
 
@@ -1337,8 +1346,8 @@ gpio_init(void)
      *    4 - IN - Power Status
      *    8 - OUT - Armed Status
      *  PINSEL3:
-     *    19 - OUT - Blinker R
-     *    20 - OUT - Blinker L
+     *    19 - OUT - C_2_3
+     *    20 - OUT - C_1
      *    21 - OUT - Brake Light
      *    23 - OUT - Reverse LED
      *    24 - OUT - Neutral LED

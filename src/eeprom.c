@@ -111,17 +111,19 @@ uint32_t ee_seq_read(uint16_t _ee_addr, int _len)
  ** Return:      None
  **
  ******************************************************************************/
-void ee_write(uint16_t _ee_addr, uint32_t _ee_data)
+uint16_t ee_write(uint16_t _ee_addr, uint32_t _ee_data)
 {
+    uint16_t i2c_status = 0;
 	uint16_t actual_addr = _ee_addr * 12;
 	uint8_t temp0 = (_ee_data & 0x000000FF);
 	uint8_t temp1 = (_ee_data & 0x0000FF00) >> 8;
 	uint8_t temp2 = (_ee_data & 0x00FF0000) >> 16;
 	uint8_t temp3 = (_ee_data & 0xFF000000) >> 24;
 
-	i2c_write(actual_addr, temp0, temp1, temp2, temp3);
-	i2c_write(actual_addr + 4, temp0, temp1, temp2, temp3);
-	i2c_write(actual_addr + 8, temp0, temp1, temp2, temp3);
+	i2c_status |= 1 << i2c_write(actual_addr, temp0, temp1, temp2, temp3);
+	i2c_status |= 1 << i2c_write(actual_addr + 4, temp0, temp1, temp2, temp3);
+	i2c_status |= 1 << i2c_write(actual_addr + 8, temp0, temp1, temp2, temp3);
+	return i2c_status;
 }
 
 /******************************************************************************
@@ -192,7 +194,7 @@ void i2c_seq_read(uint16_t _ee_addr, int read_len)
  ** Return:      None
  **
  ******************************************************************************/
-void i2c_write(uint16_t _ee_addr, uint8_t data0, uint8_t data1, uint8_t data2, uint8_t data3)
+uint8_t i2c_write(uint16_t _ee_addr, uint8_t data0, uint8_t data1, uint8_t data2, uint8_t data3)
 {
 	I2CWriteLength[PORT_USED] = 7;
 	I2CReadLength[PORT_USED] = 0;
@@ -203,7 +205,8 @@ void i2c_write(uint16_t _ee_addr, uint8_t data0, uint8_t data1, uint8_t data2, u
 	I2CMasterBuffer[PORT_USED][4] = data1;
 	I2CMasterBuffer[PORT_USED][5] = data2;
 	I2CMasterBuffer[PORT_USED][6] = data3;
-	I2CEngine( PORT_USED);
+	const uint8_t ret = I2CEngine( PORT_USED);
 
 	delayMs(1, 2);
+	return ret;
 }

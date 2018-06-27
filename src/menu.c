@@ -1571,7 +1571,7 @@ menu_runtime(void)
     lcd_putstring(1, 0, buffer);
     PAD_ROW(1, len)
 
-    len = sprintf(buffer, "%luD %02dhr", clock.t_d, clock.t_h);
+    len = sprintf(buffer, "%luD %02dhr  EETO:%d", clock.t_d, clock.t_h, STATS_EEPROM_TO);
     lcd_putstring(2, 0, buffer);
     PAD_ROW(2, len)
 
