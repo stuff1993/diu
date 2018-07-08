@@ -198,7 +198,7 @@ SysTick_Handler(void)
         }
     }
 
-    if (bmu.status & 0x107)
+    if (bmu.status & 0x107 || !bmu.con_tim || (STATS_RGN_CAP && bmu.bus_i > 19))
     {
         disengage_contactors();
     }
@@ -244,6 +244,10 @@ SysTick_Handler(void)
         if (esc.con_tim)
         {
             esc.con_tim--;
+        }
+        if (bmu.con_tim)
+        {
+        	bmu.con_tim--;
         }
 
         // CAN transceiver seems to struggle to send these and the drive packets above
@@ -655,6 +659,7 @@ shunt_data_extract(SHUNT *_shunt, CAN_MSG *_msg)
 __attribute__((always_inline)) inline void
 bmu_data_extract(BMU *_bmu, CAN_MSG *_msg)
 {
+	_bmu->con_tim = 3;
     uint16_t id_offset = _msg->MsgID - config.can_bmu;
 
     switch (id_offset)
@@ -1175,7 +1180,7 @@ esc_reset(void)
 void
 persistent_load(void)
 {
-    stats.flags |= (ee_read(ADD_BUZZ) & 0b1) << 1;
+    stats.flags |= (ee_read(ADD_BUZZ) & 0x2002);
     stats.odometer = conv_uint_float(ee_read(ADD_ODO));
     stats.odometer_tr = conv_uint_float(ee_read(ADD_ODOTR));
 
@@ -1365,6 +1370,7 @@ gpio_init(void)
     /*
      * GPIO2:
      *  PINSEL4:
+     *    0 - OUT - FAULT HELPER
      *    6 - OUT - LCD D7
      *    7 - OUT - LCD D6
      *    8 - OUT - LCD D5
@@ -1374,8 +1380,8 @@ gpio_init(void)
      *    12 - IN - Hazards
      *    13 - IN - Hazards
      */
-    LPC_GPIO2->FIODIR = (1 << 6) | (1 << 7) | (1 << 8) | (1 << 9);
-    LPC_GPIO2->FIOCLR = (1 << 6) | (1 << 7) | (1 << 8) | (1 << 9);
+    LPC_GPIO2->FIODIR = (1 << 0) | (1 << 6) | (1 << 7) | (1 << 8) | (1 << 9);
+    LPC_GPIO2->FIOCLR = (1 << 0) | (1 << 6) | (1 << 7) | (1 << 8) | (1 << 9);
 
     /*
      * GPIO3:
@@ -1445,7 +1451,6 @@ engage_contactors(void)
 {
     C_1_ON
     SET_STATS_C_1
-    delayMs(1, 2000);
     C_2_3_ON
     SET_STATS_C_2_3
 }
@@ -1580,12 +1585,12 @@ main(void)
 
     gpio_init();
 
+    engage_contactors();
+
     lcd_init();
     lcd_clear();
 
     led_test();
-
-    engage_contactors();
 
     motorcontroller_init();
 

@@ -310,6 +310,7 @@ menu_home(void)
     else if (STATS_NO_ARR_HV)                       {sprintf(buffer + 11, "Err:ARRHV");}
     else if (!(mppt[1].con_tim && mppt[2].con_tim)) {sprintf(buffer + 11, "Err:NoARR");}
     else if (!(shunt.con_tim))                      {sprintf(buffer + 11, "Err:NoSHT");}
+    else if (!(esc.con_tim))                        {sprintf(buffer + 11, "Err:NoESC");}
     else                                            {sprintf(buffer + 11, "V: %05.1fV", shunt.bus_v);}
     lcd_putstring(3, 0, buffer);
 }
@@ -1428,7 +1429,7 @@ menu_options(void)
     len = sprintf(buffer, " DRIVER: %d", menu.driver);
     lcd_putstring(2, 2, buffer);
     PAD_ROW(2, len + 2)
-    len = sprintf(buffer, " PADDLES: %d", stats.paddle_mode);
+    len = sprintf(buffer, " RGN: %d", STATS_RGN_CAP);
     lcd_putstring(3, 2, buffer);
     PAD_ROW(3, len + 2)
 
@@ -1446,7 +1447,8 @@ menu_options(void)
             switch(menu.submenu_pos)
             {
                 case 0:
-                    ee_write(ADD_BUZZ, STATS_BUZZER);
+                case 2:
+                    ee_write(ADD_BUZZ, stats.flags & 0x2002);
                     break;
                 case 1:
                     menu_init();
@@ -1473,7 +1475,7 @@ menu_options(void)
                     menu.driver = (menu.driver + 1) % 4;
                     break;
                 case 2:
-                    stats.paddle_mode = (stats.paddle_mode + 1) % 3;
+                    TOG_STATS_RGN_CAP
                     break;
                 default:
                     break;
@@ -1498,7 +1500,7 @@ menu_options(void)
                     menu.driver = (menu.driver + 3) % 4;
                     break;
                 case 2:
-                    stats.paddle_mode = (stats.paddle_mode + 2) % 3;
+                	TOG_STATS_RGN_CAP
                     break;
                 default:
                     break;

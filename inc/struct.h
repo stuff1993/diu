@@ -149,6 +149,7 @@ typedef struct MOTORCONTROLLER_STRUCT
 
 typedef struct BMU_STRUCT
 {
+	uint8_t con_tim;
     /// From CAN Bus
     uint32_t bus_v;         // Battery Voltage
     int32_t bus_i;          // Battery Output Current
@@ -263,7 +264,7 @@ struct STATS_STRUCT
 #define STATS_C_1           ((stats.flags & 0x0400) >> 10)
 #define STATS_C_2_3         ((stats.flags & 0x0800) >> 11)
 #define STATS_EEPROM_TO     ((stats.flags & 0x1000) >> 12)
-#define STATS_UNUSED5       ((stats.flags & 0x2000) >> 13)
+#define STATS_RGN_CAP       ((stats.flags & 0x2000) >> 13)
 #define STATS_UNUSED6       ((stats.flags & 0x4000) >> 14)
 #define STATS_UNUSED7       ((stats.flags & 0x8000) >> 15)
 
@@ -280,7 +281,7 @@ struct STATS_STRUCT
 #define SET_STATS_C_1           stats.flags |= 0x0400;
 #define SET_STATS_C_2_3         stats.flags |= 0x0800;
 #define SET_STATS_EEPROM_TO     stats.flags |= 0x1000;
-#define SET_STATS_UNUSED5       stats.flags |= 0x2000;
+#define SET_STATS_RGN_CAP       stats.flags |= 0x2000;
 #define SET_STATS_UNUSED6       stats.flags |= 0x4000;
 #define SET_STATS_UNUSED7       stats.flags |= 0x8000;
 
@@ -297,7 +298,7 @@ struct STATS_STRUCT
 #define CLR_STATS_C_1           stats.flags &= 0xFBFF;
 #define CLR_STATS_C_2_3         stats.flags &= 0xF7FF;
 #define CLR_STATS_EEPROM_TO     stats.flags &= 0xEFFF;
-#define CLR_STATS_UNUSED5       stats.flags &= 0xDFFF;
+#define CLR_STATS_RGN_CAP       stats.flags &= 0xDFFF;
 #define CLR_STATS_UNUSED6       stats.flags &= 0xBFFF;
 #define CLR_STATS_UNUSED7       stats.flags &= 0x7FFF;
 
@@ -314,7 +315,7 @@ struct STATS_STRUCT
 #define TOG_STATS_C_1           stats.flags ^= 0x0400;
 #define TOG_STATS_C_2_3         stats.flags ^= 0x0800;
 #define TOG_STATS_EEPROM_TO     stats.flags ^= 0x1000;
-#define TOG_STATS_UNUSED5       stats.flags ^= 0x2000;
+#define TOG_STATS_RGN_CAP       stats.flags ^= 0x2000;
 #define TOG_STATS_UNUSED6       stats.flags ^= 0x4000;
 #define TOG_STATS_UNUSED7       stats.flags ^= 0x8000;
 
